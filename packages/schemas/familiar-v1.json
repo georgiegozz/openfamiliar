@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openfamiliar.dev/schema/familiar-v1.json",
+  "title": "Familiar Pack Manifest v1",
+  "type": "object",
+  "required": ["id", "name", "version", "engine", "author", "license", "personality", "states"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "engine": { "type": "string", "minLength": 1 },
+    "author": { "type": "string", "minLength": 1 },
+    "license": { "type": "string", "minLength": 1 },
+    "homepage": { "type": "string" },
+    "personality": { "type": "string" },
+    "states": {
+      "type": "object",
+      "required": ["idle", "thinking", "working", "approval", "success", "error"],
+      "additionalProperties": { "type": "string" }
+    },
+    "assetSources": { "type": "array", "items": { "type": "string" } },
+    "aiGenerated": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

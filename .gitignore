@@ -1,0 +1,91 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+target/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*credentials*.json
+*secrets*.yaml
+*secrets*.yml
+.azure/
+.aws/
+.ssh/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+
+# Logs / coverage / local data
+*.log
+logs/
+coverage/
+.nyc_output/
+*.db
+*.db-journal
+.local/
+.cache/
+tmp/
+temp/
+
+# Tauri / desktop
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+*.app
+*.dmg
+*.AppImage
+*.msi
+*.exe
+!scripts/**/*.ps1
+
+# Packs built artifacts
+**/*.familiar
+!mascots/**/*
+mascots/**/dist/
+
+# SBOM / release artifacts (generated)
+sbom/
+release-artifacts/
+checksums.txt
+
+# Private operator tracking (local only)
+.private/
+**/OPERATOR_TRACKING.md
+**/MY_FOLLOWUP.md
+plan-tracking.md
+.local-followup/
+
+# Test / playwright
+test-results/
+playwright-report/
+blob-report/
+
+# Rust
+**/*.rs.bk
+Cargo.lock.bak
+
+# Python (if any tools)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Keep plan source for operators who choose to track it
+# plan.txt is tracked intentionally as product planning input

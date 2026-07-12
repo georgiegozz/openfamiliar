@@ -1,0 +1,2 @@
+// Synthetic only
+Console.WriteLine("OpenFamiliar demo");

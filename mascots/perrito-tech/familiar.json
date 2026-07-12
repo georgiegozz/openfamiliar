@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
+  "id": "perrito-tech",
+  "name": "Perrito Tech",
+  "version": "0.1.0",
+  "engine": ">=0.1.0",
+  "author": "georgiegozz",
+  "license": "CC-BY-4.0",
+  "homepage": "https://github.com/georgiegozz/openfamiliar",
+  "personality": "personality.md",
+  "states": {
+    "idle": "assets/idle.webp",
+    "thinking": "assets/thinking.webp",
+    "working": "assets/working.webp",
+    "approval": "assets/approval.webp",
+    "success": "assets/success.webp",
+    "error": "assets/error.webp"
+  },
+  "assetSources": ["original placeholder markers; final art pending"],
+  "aiGenerated": false
+}

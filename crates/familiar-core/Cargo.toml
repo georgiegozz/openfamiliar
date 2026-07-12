@@ -1,0 +1,28 @@
+[package]
+name = "familiar-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Familiar Core: sessions, events, providers orchestration"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+futures = { workspace = true }
+reqwest = { workspace = true }
+parking_lot = { workspace = true }
+familiar-storage = { path = "../familiar-storage" }
+familiar-permissions = { path = "../familiar-permissions" }
+familiar-context = { path = "../familiar-context" }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tempfile = { workspace = true }

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
+  "id": "blank-template",
+  "name": "Blank Template",
+  "version": "0.1.0",
+  "engine": ">=0.1.0",
+  "author": "openfamiliar",
+  "license": "CC0-1.0",
+  "personality": "personality.md",
+  "states": {
+    "idle": "assets/idle.webp",
+    "thinking": "assets/thinking.webp",
+    "working": "assets/working.webp",
+    "approval": "assets/approval.webp",
+    "success": "assets/success.webp",
+    "error": "assets/error.webp"
+  },
+  "assetSources": [],
+  "aiGenerated": false
+}

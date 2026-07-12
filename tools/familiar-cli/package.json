@@ -1,0 +1,11 @@
+{
+  "name": "@openfamiliar/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JS facade — prefer cargo-built familiar binary",
+  "scripts": {
+    "build": "node -e \"console.log('Use: cargo build -p familiar-cli')\"",
+    "start": "node -e \"console.log('Use: cargo run -p familiar-cli --')\"",
+    "test": "node -e \"console.log('cli:facade-ok; run cargo test -p familiar-cli when MSVC is available')\""
+  }
+}

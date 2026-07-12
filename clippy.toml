@@ -1,0 +1,2 @@
+# Keep defaults; project will expand deny lists as the core matures.
+msrv = "1.80.0"

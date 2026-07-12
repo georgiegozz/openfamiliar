@@ -1,0 +1,28 @@
+{
+  "name": "openfamiliar",
+  "version": "0.1.0-private",
+  "private": true,
+  "description": "Local-first desktop familiars for coding workspaces",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "dev:desktop": "pnpm --filter @openfamiliar/desktop dev",
+    "dev:creator": "pnpm --filter @openfamiliar/creator-studio dev",
+    "test": "pnpm -r --if-present run test",
+    "lint": "pnpm -r --if-present run lint",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "validate:packs": "pnpm --filter @openfamiliar/cli start -- pack validate ../../mascots/perrito-tech && pnpm --filter @openfamiliar/cli start -- pack validate ../../mascots/blank-template",
+    "schema:check": "pnpm --filter @openfamiliar/schemas test",
+    "ci:js": "pnpm format:check && pnpm typecheck && pnpm test && pnpm validate:packs"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}

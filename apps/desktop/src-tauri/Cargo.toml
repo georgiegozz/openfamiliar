@@ -1,0 +1,27 @@
+[package]
+name = "openfamiliar-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "OpenFamiliar Desktop (Tauri)"
+
+[build-dependencies]
+tauri-build = { version = "2.0.5", features = [] }
+
+[dependencies]
+tauri = { version = "2.2.0", features = ["tray-icon"] }
+tauri-plugin-shell = "2.2.0"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+familiar-core = { path = "../../../crates/familiar-core" }
+familiar-permissions = { path = "../../../crates/familiar-permissions" }
+familiar-storage = { path = "../../../crates/familiar-storage" }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+
+[lib]
+name = "openfamiliar_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]

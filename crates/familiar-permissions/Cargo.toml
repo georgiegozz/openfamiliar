@@ -1,0 +1,19 @@
+[package]
+name = "familiar-permissions"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Permission Broker for OpenFamiliar"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+familiar-storage = { path = "../familiar-storage" }
+
+[dev-dependencies]
+tempfile = { workspace = true }

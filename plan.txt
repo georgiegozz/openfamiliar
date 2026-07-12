@@ -1,0 +1,976 @@
+Nombre propuesto: OpenFamiliar
+
+Nombre del proyecto: OpenFamiliar
+Repositorio: openfamiliar
+Mascota oficial de ejemplo: Perrito Tech
+
+Build a companion. Connect your workspace.
+Crea una mascota. Conecta tu workspace.
+
+“Familiar” se usa en inglés para una criatura o compañero que acompaña y ayuda a una persona. Es más amplio que “pet”, por lo que permite perros, gatos, robots, fantasmas, slimes, avatares y personajes sin limitar el proyecto a animales.
+
+La familia de nombres quedaría así:
+
+Componente	Nombre
+Aplicación	OpenFamiliar Desktop
+Núcleo	Familiar Core
+SDK de mascotas	FamiliarKit
+Herramienta CLI	familiar
+Formato de paquete	.familiar
+Extensión de editor	OpenFamiliar Companion
+Mascota inicial	Perrito Tech
+Futuro catálogo	Familiar Gallery
+
+El nombre no contiene “ChatGPT”, “Gemini”, “Grok”, “Codex” ni otra marca de proveedor, así que no nos ata a ninguna compañía ni da la impresión de ser un producto oficial.
+
+Antes de hacerlo público se deberá realizar una revisión formal de:
+
+Repositorios y organizaciones de GitHub.
+npm, crates.io y otros registros.
+Dominios.
+Marcas registradas relevantes.
+
+La revisión inicial del nombre no sustituye una búsqueda legal de marcas.
+
+Decisión sobre la base del proyecto
+
+Mi recomendación es:
+
+Proyecto nuevo, no fork.
+
+Podemos estudiar las ideas de OpenPets, CoPet, Clawd on Desk, OpenCode Companion y DeskPet, pero el núcleo de OpenFamiliar será escrito como una implementación propia.
+
+Esto tiene varias ventajas:
+
+Identidad y arquitectura propias.
+Historial limpio.
+Control completo de licencia.
+Mejor valor como portafolio.
+Posibilidad de aceptar contribuciones sin arrastrar restricciones inesperadas.
+Libertad para separar mascotas, proveedores, workspace y agentes mediante SDKs.
+Revisión de proyectos y licencias
+OpenPets
+
+OpenPets utiliza MIT. Podemos estudiar su arquitectura de plugins e incluso adaptar código concreto siempre que conservemos sus avisos de copyright y licencia.
+
+CoPet
+
+CoPet también utiliza MIT. Es una referencia especialmente útil para Tauri, paquetes de mascotas, hooks y compatibilidad con agentes como Codex, Antigravity, OpenCode y Gemini. Su repositorio declara Tauri, Rust y React, además de importación de paquetes personalizados.
+
+DeskPet de Ice-teapop
+
+Su código utiliza MIT, pero deja expresamente fuera determinados recursos provenientes de Clawd. Podemos estudiar el router de proveedores y las protecciones de seguridad, pero no copiar recursos excluidos.
+
+Clawd on Desk
+
+El código está bajo AGPL-3.0 y sus recursos gráficos tienen condiciones independientes: muchos están reservados y no pueden reutilizarse. No debemos copiar código, sprites, sonidos ni temas de este proyecto para un núcleo Apache-2.0. Lo utilizaremos solamente como referencia conceptual y para identificar comportamientos que podamos implementar de forma independiente.
+
+OpenCode Companion
+
+El repositorio revisado no contiene un archivo LICENSE en la ruta esperada y su README únicamente remite a “detalles de licencia”. Sin una licencia explícita, no debemos copiar su código ni sus recursos. Podemos estudiar públicamente el concepto, pero la implementación debe ser propia.
+
+Open-LLM-VTuber
+
+El núcleo revisado usa MIT, pero sus modelos Live2D tienen licencias independientes. Esto demuestra por qué OpenFamiliar debe separar claramente código, arte y paquetes de personajes.
+
+Regla de reutilización
+Origen	Uso permitido en OpenFamiliar
+Código propio	Integración completa
+MIT	Permitido conservando copyright y licencia
+Apache-2.0	Permitido con avisos correspondientes
+BSD / ISC / Zlib	Permitido tras revisión
+MPL-2.0 / LGPL	Revisión manual antes de aceptar
+GPL / AGPL	Bloqueado por defecto para el núcleo
+Sin licencia	No copiar
+All Rights Reserved	No copiar
+Assets “solo personal” o “no comercial”	No distribuir
+Marcas y logos de proveedores	Solo conforme a sus guías oficiales
+
+Esta es una evaluación técnica de licencias, no un dictamen jurídico.
+
+Licencias de OpenFamiliar
+Código: Apache License 2.0
+
+Usaría:
+
+Apache-2.0
+
+para:
+
+Familiar Core.
+Aplicación de escritorio.
+CLI.
+FamiliarKit.
+Extensión de editor.
+Esquemas JSON.
+Adaptadores.
+Herramientas de creación.
+Documentación técnica incluida en el repositorio.
+
+Apache-2.0 es una licencia open source permisiva con identificador SPDX oficial y está pensada para proyectos colaborativos de larga vida.
+
+La raíz incluirá:
+
+LICENSE
+NOTICE
+THIRD_PARTY_NOTICES.md
+Arte oficial: CC BY 4.0
+
+Los sprites, animaciones, sonidos y diseños originales de Perrito Tech usarían:
+
+CC-BY-4.0
+
+Esto permitiría copiar, modificar y usar comercialmente el arte, siempre que se dé crédito al autor. Creative Commons recomienda usar licencias de software para el código y reservar CC para obras como arte, audio y documentación creativa.
+
+Plantillas vacías: CC0
+
+Las plantillas sin personaje y recursos genéricos se pueden publicar como:
+
+CC0-1.0
+
+Así cualquiera podrá usarlas para crear una mascota sin obligación de atribuir el template.
+
+Mascotas creadas por terceros
+
+Cada paquete deberá declarar obligatoriamente:
+
+{
+  "author": "Nombre del autor",
+  "license": "CC-BY-4.0",
+  "homepage": "https://...",
+  "assetSources": [],
+  "aiGenerated": false
+}
+
+OpenFamiliar permitirá importar localmente un paquete sin licencia, pero:
+
+Mostrará una advertencia.
+No permitirá enviarlo a la futura galería oficial.
+No lo distribuirá en releases.
+Lo marcará como NOASSERTION.
+
+SPDX proporciona identificadores estandarizados para representar licencias y procedencia de componentes.
+
+Política de marcas
+
+En la interfaz podremos mostrar texto como:
+
+OpenAI.
+Gemini.
+xAI.
+Ollama.
+Codex CLI.
+Gemini CLI.
+
+Pero no incluiremos sus logos como parte de la identidad de OpenFamiliar.
+
+Tampoco usaremos nombres como:
+
+ChatGPT Pet
+Gemini Familiar
+Grok Dog
+Codex Mascot
+
+OpenAI considera “OpenAI”, “ChatGPT”, “GPT” y sus logos como marcas propias; xAI impone reglas similares para “xAI”, “Grok” y sus elementos gráficos.
+
+El README tendrá esta declaración:
+
+OpenFamiliar is an independent open-source project and is not affiliated with, sponsored by, or endorsed by OpenAI, Google, xAI, Anthropic, Microsoft, Amazon, or their respective products.
+
+Definición del producto
+
+OpenFamiliar será una plataforma local para crear y ejecutar mascotas que puedan:
+
+Vivir como ventana transparente sobre el escritorio.
+Reaccionar a estados de agentes de código.
+Recibir preguntas mediante texto.
+Conectarse con modelos locales o APIs oficiales.
+Obtener contexto de workspaces autorizados.
+Mostrar exactamente qué información se enviará.
+Solicitar aprobación antes de modificar archivos o ejecutar comandos.
+Integrarse con editores compatibles mediante extensión o MCP.
+Permitir crear nuevas mascotas sin modificar el núcleo.
+Tres modos de seguridad
+Chat
+Puede:
+- Conversar.
+- Usar el modelo seleccionado.
+
+No puede:
+- Leer el workspace.
+- Ejecutar comandos.
+- Modificar archivos.
+Read-only
+Puede:
+- Leer archivos autorizados.
+- Consultar Git.
+- Ver el archivo activo.
+- Explicar código.
+
+No puede:
+- Escribir archivos.
+- Ejecutar comandos mutables.
+Agent
+Puede:
+- Proponer cambios.
+- Mostrar diffs.
+- Solicitar ejecución de comandos.
+- Delegar tareas a un CLI.
+
+Requiere:
+- Aprobación explícita.
+- Registro local de la acción.
+Arquitectura propuesta
+┌─────────────────────────────────────────────┐
+│ OpenFamiliar Desktop                        │
+│ Mascota, chat, permisos, configuración      │
+└──────────────────────┬──────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────┐
+│ Familiar Core                               │
+│                                             │
+│ Event Bus        Permission Broker          │
+│ Session Manager  Secure Storage             │
+│ Audit Log        Context Budget             │
+└──────┬───────────────┬──────────────┬───────┘
+       │               │              │
+┌──────▼──────┐ ┌──────▼──────┐ ┌────▼─────────┐
+│ Mascot SDK  │ │ AI Router    │ │ Workspace    │
+│             │ │              │ │ Context      │
+│ Packs       │ │ APIs         │ │              │
+│ Animations  │ │ Local models │ │ Files / Git  │
+│ Personality │ │ CLI bridges  │ │ IDE context  │
+└─────────────┘ └──────┬──────┘ └────┬─────────┘
+                       │              │
+        ┌──────────────┼──────────────┼────────────┐
+        │              │              │            │
+     OpenAI         Gemini          xAI         Ollama
+     compatible     native          API         local
+                       │
+                 Agent CLIs / MCP
+
+MCP se utilizará como interfaz estandarizada para exponer herramientas y recursos de contexto, empezando por transporte local. El protocolo define precisamente herramientas y recursos para conectar aplicaciones de IA con sistemas externos.
+
+Stack tecnológico
+Desktop:         Tauri 2
+Frontend:        React + TypeScript
+Core local:      Rust
+Workspace:       Cargo Workspace + pnpm Workspace
+Persistencia:    SQLite
+Configuración:   JSON / TOML
+Esquemas:        JSON Schema
+Secretos:        Credential Manager / Keychain abstraction
+IPC:             Comandos y eventos de Tauri
+MCP:             SDK oficial compatible
+Extensión:       TypeScript / VS Code API
+Tests UI:        Playwright
+Tests Rust:      cargo test
+
+Tauri con Rust y React ya ha demostrado ser viable para una mascota local ligera en CoPet, pero nuestra implementación será independiente.
+
+Alcance del MVP
+
+El primer MVP privado debe ser intencionalmente limitado.
+
+Incluido
+Windows 11 x64.
+Perrito Tech.
+Ventana transparente y siempre visible.
+Estados idle, thinking, working, approval, success, error.
+Chat por texto.
+Ollama local.
+Un adaptador compatible con OpenAI.
+Un adaptador nativo de Gemini.
+Selección manual de workspace.
+Lectura controlada de archivos.
+Vista previa del contexto.
+Historial local.
+Configuración segura de API keys.
+Cancelación de respuestas.
+Control básico de tokens.
+Importación de paquetes .familiar.
+
+Las APIs de Gemini y xAI utilizan credenciales específicas de desarrollador; no debemos acceder mediante cookies ni automatizar sesiones web. Gemini asocia sus keys con proyectos de Google Cloud, y xAI también documenta su flujo oficial mediante API key.
+
+Fuera del MVP
+Voz.
+Captura autónoma de pantalla.
+Marketplace.
+Cuentas de usuario propias.
+Backend remoto de OpenFamiliar.
+Sincronización entre dispositivos.
+Ejecución de terminal.
+Escritura de archivos.
+Mac y Linux.
+Indexación automática completa.
+Agentes trabajando permanentemente en segundo plano.
+Integración con sesiones web de ChatGPT, Gemini o SuperGrok.
+Plan de implementación por fases
+Fase 0 — Fundación pública dentro del repositorio privado
+
+Duración estimada: 3–5 días.
+
+Objetivo
+
+Crear el repositorio como si mañana fuera a hacerse público.
+
+Entregables
+README.md
+LICENSE
+NOTICE
+THIRD_PARTY_NOTICES.md
+CONTRIBUTING.md
+SECURITY.md
+PRIVACY.md
+CODE_OF_CONDUCT.md
+GOVERNANCE.md
+ROADMAP.md
+CHANGELOG.md
+DCO
+docs/adr/
+docs/legal/
+docs/security/
+
+También:
+
+Inicializar monorepo Cargo + pnpm.
+Configurar formateo, lint y tests.
+Crear plantillas de issues y pull requests.
+Definir Conventional Commits.
+Definir SemVer.
+Proteger main.
+Exigir PR incluso trabajando solo.
+Crear matriz de licencias permitidas.
+Configurar detector local de secretos.
+Añadir .env.example, nunca .env.
+Crear datos de demostración sintéticos.
+
+GitHub señala que un repositorio necesita una licencia explícita para que terceros puedan usar, modificar y distribuir realmente el proyecto como open source.
+
+El DCO servirá para que cada colaborador certifique que tiene derecho a aportar su contribución.
+
+Criterio de salida
+Compilación vacía exitosa en Windows.
+CI verde.
+Cero secretos en Git.
+Licencias y políticas presentes.
+Primer ADR aprobado.
+Fase 1 — Spikes arquitectónicos
+
+Duración estimada: 1–2 semanas.
+
+Objetivo
+
+Validar los riesgos técnicos antes de construir el producto completo.
+
+Spikes
+Ventana transparente con Tauri.
+Always-on-top y click-through configurable.
+Arrastrar y redimensionar mascota.
+Animación WebP o spritesheet.
+Streaming de respuesta desde un proveedor.
+Acceso seguro a credenciales.
+Lanzamiento y cancelación de subprocess.
+Lectura limitada de un workspace.
+SQLite y migraciones.
+Servidor MCP local mínimo.
+ADR que deben salir de esta fase
+ADR-001 Desktop framework
+ADR-002 Mascot rendering format
+ADR-003 Plugin isolation
+ADR-004 Provider abstraction
+ADR-005 Secure credential storage
+ADR-006 Workspace permission model
+ADR-007 Local IPC and MCP transport
+ADR-008 Licensing strategy
+Criterio de salida
+
+Una demostración técnica donde Perrito Tech:
+
+Aparece en Windows.
+Cambia de idle a thinking.
+Recibe una pregunta.
+Muestra una respuesta simulada en streaming.
+Se puede cerrar desde la bandeja.
+Fase 2 — OpenFamiliar Desktop Shell
+
+Duración estimada: 2 semanas.
+
+Objetivo
+
+Construir la aplicación de escritorio sin depender aún de un proveedor real.
+
+Funciones
+Ventana transparente.
+System tray.
+Arranque y cierre limpios.
+Guardado de posición por monitor.
+Soporte para escalado de Windows.
+Tamaños de mascota.
+Click-through opcional.
+Panel de configuración.
+Burbuja de chat.
+Notificaciones.
+Registro local estructurado.
+Recuperación ante cierre inesperado.
+Actualizaciones deshabilitadas hasta tener mecanismo firmado.
+Estados iniciales
+idle
+listening
+thinking
+working
+waiting_approval
+success
+error
+sleeping
+offline
+Criterio de salida
+Funciona durante ocho horas sin crecimiento anormal de memoria.
+Recupera su posición después de reiniciar.
+No bloquea clics cuando click-through está activo.
+Funciona correctamente en uno y dos monitores.
+Fase 3 — FamiliarKit y paquetes de mascotas
+
+Duración estimada: 2–3 semanas.
+
+Objetivo
+
+Permitir que una mascota sea contenido, no código.
+
+Formato
+perrito-tech.familiar
+├─ familiar.json
+├─ personality.md
+├─ LICENSE
+├─ assets/
+│  ├─ idle.webp
+│  ├─ thinking.webp
+│  ├─ working.webp
+│  ├─ approval.webp
+│  ├─ success.webp
+│  └─ error.webp
+├─ sounds/
+└─ previews/
+Manifiesto
+{
+  "$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
+  "id": "perrito-tech",
+  "name": "Perrito Tech",
+  "version": "0.1.0",
+  "engine": ">=0.1.0",
+  "author": "georiegozz",
+  "license": "CC-BY-4.0",
+  "personality": "personality.md",
+  "states": {
+    "idle": "assets/idle.webp",
+    "thinking": "assets/thinking.webp",
+    "working": "assets/working.webp",
+    "approval": "assets/approval.webp",
+    "success": "assets/success.webp",
+    "error": "assets/error.webp"
+  }
+}
+CLI
+familiar pack init
+familiar pack validate
+familiar pack preview
+familiar pack build
+familiar pack inspect
+Seguridad del paquete
+No JavaScript ejecutable en v1.
+No binarios.
+No rutas absolutas.
+No ../.
+Límite de tamaño.
+Validación de MIME.
+Hash de cada recurso.
+Esquema versionado.
+Licencia obligatoria para publicación.
+Criterio de salida
+
+Una persona puede sustituir Perrito Tech por otra mascota sin recompilar la aplicación.
+
+Fase 4 — Router de modelos y chat
+
+Duración estimada: 2–3 semanas.
+
+Objetivo
+
+Separar completamente la interfaz del proveedor de IA.
+
+Contrato conceptual
+interface ModelProvider {
+  id: string;
+  validateConfiguration(): Promise<ValidationResult>;
+  listModels(): Promise<ModelInfo[]>;
+  stream(request: ChatRequest): AsyncIterable<ChatEvent>;
+  cancel(sessionId: string): Promise<void>;
+  estimateCost?(request: ChatRequest): Promise<CostEstimate>;
+}
+Adaptadores iniciales
+ollama-local
+openai-compatible
+gemini-native
+
+El adaptador compatible con OpenAI permitirá configurar una URL base personalizada. xAI documenta compatibilidad con la interfaz REST de OpenAI, aunque se deberá probar cada función y no asumir compatibilidad total de herramientas.
+
+Funciones
+Streaming.
+Cancelación.
+Timeouts.
+Reintentos limitados.
+Selector de modelos.
+Presupuesto por solicitud.
+Límite de contexto.
+Métricas locales.
+Ocultamiento de secretos en logs.
+Prueba de conexión.
+Mensajes de error normalizados.
+Fallback opcional, nunca automático por defecto.
+Criterio de salida
+
+La misma conversación funciona con Ollama, Gemini y un endpoint compatible sin cambios en la UI.
+
+Fase 5 — Contexto read-only del workspace
+
+Duración estimada: 2–3 semanas.
+
+Objetivo
+
+Hacer que la mascota entienda un proyecto sin enviar todo el repositorio.
+
+Funciones
+Selección explícita de workspace.
+Lista de carpetas autorizadas.
+Canonicalización de rutas.
+Respeto de .gitignore.
+Archivo .openfamiliarignore.
+Selección manual de archivos.
+Lectura del archivo activo.
+Selección de fragmentos.
+Árbol resumido del proyecto.
+git status.
+git diff.
+Búsqueda textual local.
+Vista previa del contexto.
+Estimación de tokens.
+Exclusión de binarios.
+Detección de archivos sensibles.
+Redacción de secretos.
+Historial de qué archivos fueron enviados.
+Regla de contexto
+Nunca enviar todo el workspace por defecto.
+
+Orden:
+1. Selección del usuario
+2. Archivo activo
+3. Archivos relacionados explícitos
+4. Diff de Git
+5. Búsqueda limitada
+6. Expansión solicitada
+Archivos bloqueados inicialmente
+.env
+*.pem
+*.key
+*.pfx
+*.p12
+id_rsa*
+credentials*
+secrets*
+terraform.tfstate*
+.azure/
+.aws/
+.ssh/
+Criterio de salida
+
+Perrito Tech puede responder preguntas sobre un repositorio de prueba y mostrar exactamente los archivos enviados al proveedor.
+
+Fase 6 — Adaptadores de agentes y CLI
+
+Duración estimada: 3–4 semanas.
+
+Objetivo
+
+Permitir que OpenFamiliar delegue tareas a agentes ya autenticados.
+
+Arquitectura
+OpenFamiliar
+     │
+Agent Bridge Protocol
+     ├─ Generic subprocess
+     ├─ Codex adapter
+     ├─ Gemini CLI adapter
+     ├─ OpenCode adapter
+     ├─ Antigravity adapter
+     └─ Kiro feasibility adapter
+Principios
+OpenFamiliar no roba ni copia credenciales del CLI.
+El CLI conserva su autenticación.
+Se registra el proceso ejecutado.
+Se limita el directorio de trabajo.
+Se puede cancelar.
+La salida se normaliza a eventos.
+Cada integración tiene pruebas contractuales.
+Ningún CLI es considerado “siempre disponible”.
+Eventos normalizados
+session.started
+agent.thinking
+agent.reading
+agent.editing
+agent.running
+agent.waiting_approval
+agent.completed
+agent.failed
+session.cancelled
+Orden de implementación
+Generic subprocess.
+OpenCode o Gemini CLI.
+Codex CLI.
+Antigravity.
+Kiro, dependiendo de las interfaces públicas disponibles.
+Criterio de salida
+
+Al menos dos agentes reales pueden:
+
+Recibir una tarea.
+Trabajar en el workspace seleccionado.
+Cambiar los estados de la mascota.
+Solicitar aprobación.
+Ser cancelados.
+Fase 7 — Permission Broker y modo Agent
+
+Duración estimada: 2–3 semanas.
+
+Objetivo
+
+Agregar acciones sin convertir la mascota en una puerta trasera local.
+
+Operaciones
+workspace.read
+workspace.search
+workspace.write
+workspace.delete
+git.read
+git.diff
+process.execute
+network.fetch
+clipboard.read
+clipboard.write
+Cada aprobación mostrará
+Agente solicitante.
+Operación.
+Ruta afectada.
+Comando completo.
+Directorio de trabajo.
+Archivos que se modificarán.
+Riesgo estimado.
+Alcance de la aprobación.
+Tipos de aprobación
+Permitir una vez
+Permitir durante esta sesión
+Permitir esta operación en esta carpeta
+Denegar
+Denegar y bloquear regla
+Protecciones
+Diff antes de escribir.
+Backup temporal.
+Rollback.
+Timeout.
+Límites de salida.
+Lista de comandos bloqueados.
+Rechazo de rutas fuera del workspace.
+Resolución de symlinks.
+Registro JSONL local.
+Botón de emergencia para detener procesos.
+Criterio de salida
+
+Ninguna escritura o ejecución mutable puede ocurrir sin pasar por el Permission Broker.
+
+Fase 8 — MCP y extensión de editores
+
+Duración estimada: 3 semanas.
+
+Objetivo
+
+Conectar OpenFamiliar con editores y agentes sin duplicar el núcleo.
+
+MCP local
+
+Recursos:
+
+familiar://workspace/tree
+familiar://workspace/active-file
+familiar://workspace/git-diff
+familiar://session/status
+
+Herramientas:
+
+familiar_set_state
+familiar_say
+familiar_request_approval
+familiar_notify
+familiar_get_context
+
+Inicialmente se utilizará transporte local; no se expondrá un servidor público en red.
+
+Extensión compatible con VS Code
+
+Comandos:
+
+OpenFamiliar: Ask about selection
+OpenFamiliar: Explain active file
+OpenFamiliar: Review Git diff
+OpenFamiliar: Add file to context
+OpenFamiliar: Start agent task
+OpenFamiliar: Show session
+
+La extensión será delgada:
+
+Editor
+  ↓ localhost / IPC
+OpenFamiliar Core
+  ↓
+Provider o agente
+Criterio de salida
+
+La extensión puede enviar selección, archivo activo y diff al núcleo local sin manejar API keys.
+
+Fase 9 — Familiar Creator Studio
+
+Duración estimada: 2–3 semanas.
+
+Objetivo
+
+Permitir que una persona no técnica cree su mascota.
+
+Flujo
+1. Crear proyecto
+2. Elegir nombre y autor
+3. Seleccionar licencia
+4. Importar sprites
+5. Asignar estados
+6. Ajustar escala y FPS
+7. Crear personalidad
+8. Probar eventos
+9. Validar
+10. Exportar .familiar
+Funciones
+Preview en tiempo real.
+Editor de estados.
+Recorte de spritesheet.
+Conversión a WebP.
+Validador de transparencia.
+Vista previa de sonidos.
+Generador de manifiesto.
+Selección guiada de licencia.
+Exportación reproducible.
+Verificación de procedencia.
+Plantilla Perrito Tech.
+Plantilla completamente vacía.
+Criterio de salida
+
+Una persona puede crear, probar y exportar una mascota sin editar JSON manualmente.
+
+Fase 10 — Hardening y cadena de suministro
+
+Duración estimada: 2–3 semanas.
+
+Objetivo
+
+Preparar una aplicación que la gente pueda instalar con confianza.
+
+Seguridad
+Threat model actualizado.
+Tests contra path traversal.
+Tests contra symlinks.
+Tests contra paquetes corruptos.
+Fuzzing del lector de manifiestos.
+Sanitización de logs.
+Rotación del audit log.
+Migraciones seguras de SQLite.
+Dependencias fijadas.
+Revisión de vulnerabilidades.
+SBOM.
+Verificación de licencias.
+Artefactos reproducibles cuando sea posible.
+CI
+format
+lint
+unit-tests
+integration-tests
+schema-tests
+pack-tests
+license-check
+dependency-audit
+secret-scan
+windows-build
+sbom-generation
+artifact-checksum
+
+GitHub puede escanear el historial completo en busca de credenciales y ofrecer protección antes del push, aunque la disponibilidad en repositorios privados depende del plan y configuración.
+
+Rendimiento
+
+Objetivos iniciales:
+
+Inicio en frío:       < 3 segundos
+RAM en idle:          < 150 MB
+CPU en idle:          < 1 %
+Mascot event latency: < 150 ms
+Cancelación:          < 1 segundo
+
+Son objetivos del proyecto, no garantías previas a las pruebas.
+
+Criterio de salida
+
+Release candidate instalable, con SBOM, checksums y reporte de auditoría.
+
+Fase 11 — Beta privada
+
+Duración estimada: 2–4 semanas.
+
+Objetivo
+
+Probarlo como usuario real antes de abrir el repositorio.
+
+Pruebas
+Usarlo diariamente en _engine.
+Preguntas sencillas.
+Revisión de Terraform.
+Revisión de diffs.
+Uso con repositorios grandes.
+Cambio entre modelos.
+Cancelaciones.
+Caídas de red.
+API key inválida.
+CLI no instalado.
+Workspace movido.
+Paquete corrupto.
+Dos monitores.
+Reinicio de Windows.
+Sleep y wake.
+Datos de beta
+Telemetría deshabilitada.
+Registro local exportable.
+Reporte voluntario.
+No recopilar archivos del usuario.
+No enviar logs automáticamente.
+Plantilla para borrar secretos antes de compartir un reporte.
+Criterios de salida
+Ningún bug crítico abierto.
+Ninguna fuga de credenciales.
+Ninguna acción sin aprobación.
+Cero pérdida de historial durante migraciones.
+Instalación y desinstalación limpias.
+Documentación reproducible en una máquina nueva.
+Fase 12 — Preparación para hacerlo público
+
+Duración estimada: 1–2 semanas.
+
+Auditoría final
+Revisar todo el historial Git.
+Eliminar secretos del historial, no solamente del último commit.
+Retirar datos laborales o empresariales.
+Sustituir workspaces reales por ejemplos sintéticos.
+Verificar autoría de cada sprite y sonido.
+Generar THIRD_PARTY_NOTICES.md.
+Revisar dependencias transitivas.
+Confirmar nombre y marcas.
+Revisar política de privacidad.
+Crear SUPPORT.md.
+Crear plantillas de vulnerabilidades.
+Preparar capturas y demo.
+Escribir guía de arquitectura.
+Crear tutorial de una mascota.
+Preparar el primer release firmado o documentar que aún no está firmado.
+Publicación
+v0.1.0 Public Beta
+
+No llamaría v1.0.0 a la primera publicación. La versión 1.0 debería reservarse para cuando:
+
+El esquema .familiar sea estable.
+El SDK tenga compatibilidad documentada.
+Exista política de deprecación.
+Las migraciones estén probadas.
+Haya al menos dos proveedores y dos agentes estables.
+Estructura del repositorio
+openfamiliar/
+├─ apps/
+│  ├─ desktop/
+│  ├─ creator-studio/
+│  └─ vscode-extension/
+│
+├─ crates/
+│  ├─ familiar-core/
+│  ├─ familiar-context/
+│  ├─ familiar-permissions/
+│  ├─ familiar-storage/
+│  ├─ familiar-agent-bridge/
+│  └─ familiar-mcp/
+│
+├─ packages/
+│  ├─ mascot-sdk/
+│  ├─ provider-sdk/
+│  ├─ agent-sdk/
+│  ├─ schemas/
+│  └─ ui/
+│
+├─ adapters/
+│  ├─ ollama/
+│  ├─ openai-compatible/
+│  ├─ gemini/
+│  ├─ codex/
+│  ├─ gemini-cli/
+│  ├─ opencode/
+│  └─ antigravity/
+│
+├─ mascots/
+│  ├─ perrito-tech/
+│  └─ blank-template/
+│
+├─ tools/
+│  └─ familiar-cli/
+│
+├─ examples/
+│  ├─ demo-dotnet/
+│  ├─ demo-terraform/
+│  └─ demo-typescript/
+│
+├─ docs/
+│  ├─ architecture/
+│  ├─ adr/
+│  ├─ security/
+│  ├─ legal/
+│  └─ guides/
+│
+├─ LICENSE
+├─ NOTICE
+├─ THIRD_PARTY_NOTICES.md
+├─ PRIVACY.md
+├─ SECURITY.md
+├─ CONTRIBUTING.md
+└─ README.md
+Reglas desde el primer commit
+Ninguna API key en archivos, fixtures, screenshots o logs.
+Ningún dato de tu trabajo o clientes en el repositorio.
+Todo recurso debe tener autor, origen y licencia.
+Toda dependencia nueva debe pasar revisión de licencia.
+Ninguna función puede leer todo el disco.
+Todo workspace debe autorizarse explícitamente.
+Todo contexto enviado debe poder previsualizarse.
+La telemetría estará desactivada por defecto.
+No habrá scraping de sesiones web ni extracción de cookies.
+Todo cambio arquitectónico relevante tendrá ADR.
+Toda integración tendrá pruebas contractuales.
+Toda acción mutable necesitará aprobación.
+main siempre debe ser compilable.
+Los ejemplos usarán información sintética.
+El repositorio privado se mantendrá publicable en cualquier momento.
+
+mi repo provado de git es git remote add origin https://github.com/georgiegozz/openfamiliar.git
+git branch -M main
+git push -u origin main
+
+al final de la implamentacion todo debe de quedar dentro de C:\Users\jorge gonzalez\Music\proyects\openfamiliar y mandar comit y push a main, el repo es privado ahorita también genera un manual de las cosas eu tendría que hacer posterior a la implenentacionpara darse sguimineto
+
+implmenta las fases qe esten a tu alcances que creoq ue son casi todo menos lo mnualn y parte crea un documento solo para mi ignorado en gitignore que sea mi seguiminto y que se genere en plan ahíy as deciciones tomadas y porque y siguientes pasos después de ralizar cada fase y is es necesario retrospectiva a la fases y una vez completado comit y push asi hasta finalizar la toda la soluicon, teneindo en cuenta la generación de manual de cosas qu yo tengo que hacerocmo humano  y las prubeas que tendri auq ehacer, al final comi ty push
