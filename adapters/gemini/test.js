@@ -1,1 +1,1 @@
-console.log('adapter-gemini:ok');
+console.log("adapter-gemini:ok");

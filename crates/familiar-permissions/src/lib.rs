@@ -44,7 +44,10 @@ impl Operation {
 
     pub fn risk_hint(self) -> &'static str {
         match self {
-            Operation::WorkspaceRead | Operation::WorkspaceSearch | Operation::GitRead | Operation::GitDiff => "low",
+            Operation::WorkspaceRead
+            | Operation::WorkspaceSearch
+            | Operation::GitRead
+            | Operation::GitDiff => "low",
             Operation::ClipboardRead | Operation::NetworkFetch => "medium",
             Operation::WorkspaceWrite | Operation::ClipboardWrite => "high",
             Operation::WorkspaceDelete | Operation::ProcessExecute => "critical",
@@ -290,7 +293,10 @@ mod tests {
                 risk: String::new(),
             })
             .unwrap_err();
-        assert!(matches!(err, PermissionError::ModeDenied(SecurityMode::Chat)));
+        assert!(matches!(
+            err,
+            PermissionError::ModeDenied(SecurityMode::Chat)
+        ));
     }
 
     #[test]

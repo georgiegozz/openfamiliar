@@ -1,1 +1,1 @@
-console.log('adapter-ollama:ok');
+console.log("adapter-ollama:ok");

@@ -10,32 +10,60 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "windows": [
       {
-        "label": "main",
-        "title": "OpenFamiliar",
-        "width": 240,
-        "height": 280,
+        "label": "mascot",
+        "title": "Perrito Tech",
+        "url": "index.html?window=mascot",
+        "width": 152,
+        "height": 152,
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,
-        "resizable": true,
+        "resizable": false,
         "visible": true,
-        "skipTaskbar": false,
+        "skipTaskbar": true,
         "shadow": false
+      },
+      {
+        "label": "settings",
+        "title": "OpenFamiliar Settings",
+        "url": "index.html?window=settings",
+        "width": 760,
+        "height": 700,
+        "minWidth": 680,
+        "minHeight": 560,
+        "transparent": false,
+        "decorations": true,
+        "resizable": true,
+        "visible": false,
+        "skipTaskbar": false,
+        "shadow": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost; script-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
     }
   },
   "bundle": {
-    "active": false,
-    "targets": "all",
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "shortDescription": "Windows pixel-art desktop companion for one-shot Codex CLI questions.",
+    "longDescription": "OpenFamiliar v0.1 runs Perrito Tech as a transparent Windows desktop companion and sends independent, ephemeral questions through an existing Codex CLI installation.",
     "icon": [
-      "icons/icon.png"
-    ]
-  },
-  "plugins": {}
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      },
+      "wix": {
+        "language": "en-US"
+      }
+    }
+  }
 }

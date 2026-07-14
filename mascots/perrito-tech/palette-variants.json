@@ -1,0 +1,29 @@
+{
+  "source": "mascots/perrito-tech/assets/perrito-tech-spritesheet.png",
+  "sourcePalette": {
+    "shadow": "#055d58",
+    "midDark": "#0a827b",
+    "mid": "#0b9595",
+    "highlight": "#0f484c"
+  },
+  "variants": {
+    "midnight": {
+      "asset": "mascots/perrito-tech/assets/variants/perrito-tech-midnight.png",
+      "palette": {
+        "shadow": "#0d2444",
+        "midDark": "#1f3d64",
+        "mid": "#2f6dab",
+        "highlight": "#142c50"
+      }
+    },
+    "burgundy": {
+      "asset": "mascots/perrito-tech/assets/variants/perrito-tech-burgundy.png",
+      "palette": {
+        "shadow": "#3a131c",
+        "midDark": "#652737",
+        "mid": "#a54354",
+        "highlight": "#4d1b29"
+      }
+    }
+  }
+}

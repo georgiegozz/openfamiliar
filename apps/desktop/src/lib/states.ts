@@ -22,7 +22,13 @@ export const MASCOT_STATES: MascotState[] = [
 ];
 
 export function nextDemoState(current: MascotState): MascotState {
-  const order: MascotState[] = ["idle", "thinking", "working", "success", "idle"];
+  const order: MascotState[] = [
+    "idle",
+    "thinking",
+    "working",
+    "success",
+    "idle",
+  ];
   const idx = order.indexOf(current);
   if (idx === -1) return "idle";
   return order[(idx + 1) % order.length]!;

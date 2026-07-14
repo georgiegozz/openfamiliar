@@ -31,10 +31,41 @@ export interface ModelProvider {
   listModels(): Promise<ModelInfo[]>;
   stream(request: ChatRequest): AsyncIterable<ChatEvent>;
   cancel(sessionId: string): Promise<void>;
-  estimateCost?(request: ChatRequest): Promise<{ currency: string; amount: number }>;
+  estimateCost?(
+    request: ChatRequest,
+  ): Promise<{ currency: string; amount: number }>;
 }
 
-export async function collectStream(provider: ModelProvider, request: ChatRequest): Promise<string> {
+export interface ProviderStatus {
+  installed: boolean;
+  authenticated: boolean;
+  compatible: boolean;
+  version?: string;
+  executable?: string;
+  message: string;
+}
+
+export interface OneShotRequest {
+  requestId: string;
+  prompt: string;
+  timeoutSeconds: number;
+}
+
+export interface OneShotResult {
+  requestId: string;
+  answer: string;
+}
+
+export interface OneShotProvider {
+  detect(): Promise<ProviderStatus>;
+  ask(request: OneShotRequest): Promise<OneShotResult>;
+  cancel(requestId: string): Promise<void>;
+}
+
+export async function collectStream(
+  provider: ModelProvider,
+  request: ChatRequest,
+): Promise<string> {
   let out = "";
   for await (const ev of provider.stream(request)) {
     if (ev.type === "delta") out += ev.text;

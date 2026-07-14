@@ -29,7 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
       path: editor.document.uri.fsPath,
       text,
     });
-    vscode.window.showInformationMessage("Selección enviada a OpenFamiliar (local).");
+    vscode.window.showInformationMessage(
+      "Selección enviada a OpenFamiliar (local).",
+    );
   });
 
   reg("openfamiliar.explainActive", async () => {
@@ -41,17 +43,23 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   reg("openfamiliar.reviewDiff", async () => {
-    await postToCore("/v1/context/git-diff", { workspace: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath });
+    await postToCore("/v1/context/git-diff", {
+      workspace: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+    });
   });
 
   reg("openfamiliar.addToContext", async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
-    await postToCore("/v1/context/add-file", { path: editor.document.uri.fsPath });
+    await postToCore("/v1/context/add-file", {
+      path: editor.document.uri.fsPath,
+    });
   });
 
   reg("openfamiliar.startAgent", async () => {
-    const task = await vscode.window.showInputBox({ prompt: "Tarea para el agente" });
+    const task = await vscode.window.showInputBox({
+      prompt: "Tarea para el agente",
+    });
     if (!task) return;
     await postToCore("/v1/agent/start", { task });
   });

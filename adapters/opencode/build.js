@@ -1,1 +1,1 @@
-console.log('adapter-opencode:build');
+console.log("adapter-opencode:build");

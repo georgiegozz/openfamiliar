@@ -1,0 +1,5 @@
+interface:
+  display_name: "OpenFamiliar Windows UI"
+  short_description: "Build safe Windows mascot UI flows"
+  brand_color: "#43D7B0"
+  default_prompt: "Use $openfamiliar-windows-ui to implement a focused Tauri window interaction."

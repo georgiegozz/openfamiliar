@@ -1,1 +1,1 @@
-console.log('adapter-codex:build');
+console.log("adapter-codex:build");

@@ -1,3 +1,10 @@
+# Initial product vision
+
+> Historical planning document preserved for design context. It contains early
+> ideas and possible future directions, not commitments or claims about the
+> current beta. See the [README](../../README.md) and [roadmap](../../ROADMAP.md)
+> for the supported product scope.
+
 Nombre propuesto: OpenFamiliar
 
 Nombre del proyecto: OpenFamiliar
@@ -11,15 +18,15 @@ Crea una mascota. Conecta tu workspace.
 
 La familia de nombres quedaría así:
 
-Componente	Nombre
-Aplicación	OpenFamiliar Desktop
-Núcleo	Familiar Core
-SDK de mascotas	FamiliarKit
-Herramienta CLI	familiar
-Formato de paquete	.familiar
-Extensión de editor	OpenFamiliar Companion
-Mascota inicial	Perrito Tech
-Futuro catálogo	Familiar Gallery
+Componente Nombre
+Aplicación OpenFamiliar Desktop
+Núcleo Familiar Core
+SDK de mascotas FamiliarKit
+Herramienta CLI familiar
+Formato de paquete .familiar
+Extensión de editor OpenFamiliar Companion
+Mascota inicial Perrito Tech
+Futuro catálogo Familiar Gallery
 
 El nombre no contiene “ChatGPT”, “Gemini”, “Grok”, “Codex” ni otra marca de proveedor, así que no nos ata a ninguna compañía ni da la impresión de ser un producto oficial.
 
@@ -74,17 +81,17 @@ Open-LLM-VTuber
 El núcleo revisado usa MIT, pero sus modelos Live2D tienen licencias independientes. Esto demuestra por qué OpenFamiliar debe separar claramente código, arte y paquetes de personajes.
 
 Regla de reutilización
-Origen	Uso permitido en OpenFamiliar
-Código propio	Integración completa
-MIT	Permitido conservando copyright y licencia
-Apache-2.0	Permitido con avisos correspondientes
-BSD / ISC / Zlib	Permitido tras revisión
-MPL-2.0 / LGPL	Revisión manual antes de aceptar
-GPL / AGPL	Bloqueado por defecto para el núcleo
-Sin licencia	No copiar
-All Rights Reserved	No copiar
-Assets “solo personal” o “no comercial”	No distribuir
-Marcas y logos de proveedores	Solo conforme a sus guías oficiales
+Origen Uso permitido en OpenFamiliar
+Código propio Integración completa
+MIT Permitido conservando copyright y licencia
+Apache-2.0 Permitido con avisos correspondientes
+BSD / ISC / Zlib Permitido tras revisión
+MPL-2.0 / LGPL Revisión manual antes de aceptar
+GPL / AGPL Bloqueado por defecto para el núcleo
+Sin licencia No copiar
+All Rights Reserved No copiar
+Assets “solo personal” o “no comercial” No distribuir
+Marcas y logos de proveedores Solo conforme a sus guías oficiales
 
 Esta es una evaluación técnica de licencias, no un dictamen jurídico.
 
@@ -135,11 +142,11 @@ Mascotas creadas por terceros
 Cada paquete deberá declarar obligatoriamente:
 
 {
-  "author": "Nombre del autor",
-  "license": "CC-BY-4.0",
-  "homepage": "https://...",
-  "assetSources": [],
-  "aiGenerated": false
+"author": "Nombre del autor",
+"license": "CC-BY-4.0",
+"homepage": "https://...",
+"assetSources": [],
+"aiGenerated": false
 }
 
 OpenFamiliar permitirá importar localmente un paquete sin licencia, pero:
@@ -193,78 +200,82 @@ Permitir crear nuevas mascotas sin modificar el núcleo.
 Tres modos de seguridad
 Chat
 Puede:
+
 - Conversar.
 - Usar el modelo seleccionado.
 
 No puede:
+
 - Leer el workspace.
 - Ejecutar comandos.
 - Modificar archivos.
-Read-only
-Puede:
+  Read-only
+  Puede:
 - Leer archivos autorizados.
 - Consultar Git.
 - Ver el archivo activo.
 - Explicar código.
 
 No puede:
+
 - Escribir archivos.
 - Ejecutar comandos mutables.
-Agent
-Puede:
+  Agent
+  Puede:
 - Proponer cambios.
 - Mostrar diffs.
 - Solicitar ejecución de comandos.
 - Delegar tareas a un CLI.
 
 Requiere:
+
 - Aprobación explícita.
 - Registro local de la acción.
-Arquitectura propuesta
-┌─────────────────────────────────────────────┐
-│ OpenFamiliar Desktop                        │
-│ Mascota, chat, permisos, configuración      │
-└──────────────────────┬──────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────┐
-│ Familiar Core                               │
-│                                             │
-│ Event Bus        Permission Broker          │
-│ Session Manager  Secure Storage             │
-│ Audit Log        Context Budget             │
-└──────┬───────────────┬──────────────┬───────┘
-       │               │              │
-┌──────▼──────┐ ┌──────▼──────┐ ┌────▼─────────┐
-│ Mascot SDK  │ │ AI Router    │ │ Workspace    │
-│             │ │              │ │ Context      │
-│ Packs       │ │ APIs         │ │              │
-│ Animations  │ │ Local models │ │ Files / Git  │
-│ Personality │ │ CLI bridges  │ │ IDE context  │
-└─────────────┘ └──────┬──────┘ └────┬─────────┘
-                       │              │
-        ┌──────────────┼──────────────┼────────────┐
-        │              │              │            │
-     OpenAI         Gemini          xAI         Ollama
-     compatible     native          API         local
-                       │
-                 Agent CLIs / MCP
+  Arquitectura propuesta
+  ┌─────────────────────────────────────────────┐
+  │ OpenFamiliar Desktop │
+  │ Mascota, chat, permisos, configuración │
+  └──────────────────────┬──────────────────────┘
+  │
+  ┌──────────────────────▼──────────────────────┐
+  │ Familiar Core │
+  │ │
+  │ Event Bus Permission Broker │
+  │ Session Manager Secure Storage │
+  │ Audit Log Context Budget │
+  └──────┬───────────────┬──────────────┬───────┘
+  │ │ │
+  ┌──────▼──────┐ ┌──────▼──────┐ ┌────▼─────────┐
+  │ Mascot SDK │ │ AI Router │ │ Workspace │
+  │ │ │ │ │ Context │
+  │ Packs │ │ APIs │ │ │
+  │ Animations │ │ Local models │ │ Files / Git │
+  │ Personality │ │ CLI bridges │ │ IDE context │
+  └─────────────┘ └──────┬──────┘ └────┬─────────┘
+  │ │
+  ┌──────────────┼──────────────┼────────────┐
+  │ │ │ │
+  OpenAI Gemini xAI Ollama
+  compatible native API local
+  │
+  Agent CLIs / MCP
 
 MCP se utilizará como interfaz estandarizada para exponer herramientas y recursos de contexto, empezando por transporte local. El protocolo define precisamente herramientas y recursos para conectar aplicaciones de IA con sistemas externos.
 
 Stack tecnológico
-Desktop:         Tauri 2
-Frontend:        React + TypeScript
-Core local:      Rust
-Workspace:       Cargo Workspace + pnpm Workspace
-Persistencia:    SQLite
-Configuración:   JSON / TOML
-Esquemas:        JSON Schema
-Secretos:        Credential Manager / Keychain abstraction
-IPC:             Comandos y eventos de Tauri
-MCP:             SDK oficial compatible
-Extensión:       TypeScript / VS Code API
-Tests UI:        Playwright
-Tests Rust:      cargo test
+Desktop: Tauri 2
+Frontend: React + TypeScript
+Core local: Rust
+Workspace: Cargo Workspace + pnpm Workspace
+Persistencia: SQLite
+Configuración: JSON / TOML
+Esquemas: JSON Schema
+Secretos: Credential Manager / Keychain abstraction
+IPC: Comandos y eventos de Tauri
+MCP: SDK oficial compatible
+Extensión: TypeScript / VS Code API
+Tests UI: Playwright
+Tests Rust: cargo test
 
 Tauri con Rust y React ya ha demostrado ser viable para una mascota local ligera en CoPet, pero nuestra implementación será independiente.
 
@@ -443,32 +454,32 @@ perrito-tech.familiar
 ├─ personality.md
 ├─ LICENSE
 ├─ assets/
-│  ├─ idle.webp
-│  ├─ thinking.webp
-│  ├─ working.webp
-│  ├─ approval.webp
-│  ├─ success.webp
-│  └─ error.webp
+│ ├─ idle.webp
+│ ├─ thinking.webp
+│ ├─ working.webp
+│ ├─ approval.webp
+│ ├─ success.webp
+│ └─ error.webp
 ├─ sounds/
 └─ previews/
 Manifiesto
 {
-  "$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
-  "id": "perrito-tech",
-  "name": "Perrito Tech",
-  "version": "0.1.0",
-  "engine": ">=0.1.0",
-  "author": "georiegozz",
-  "license": "CC-BY-4.0",
-  "personality": "personality.md",
-  "states": {
-    "idle": "assets/idle.webp",
-    "thinking": "assets/thinking.webp",
-    "working": "assets/working.webp",
-    "approval": "assets/approval.webp",
-    "success": "assets/success.webp",
-    "error": "assets/error.webp"
-  }
+"$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
+"id": "perrito-tech",
+"name": "Perrito Tech",
+"version": "0.1.0",
+"engine": ">=0.1.0",
+"author": "georiegozz",
+"license": "CC-BY-4.0",
+"personality": "personality.md",
+"states": {
+"idle": "assets/idle.webp",
+"thinking": "assets/thinking.webp",
+"working": "assets/working.webp",
+"approval": "assets/approval.webp",
+"success": "assets/success.webp",
+"error": "assets/error.webp"
+}
 }
 CLI
 familiar pack init
@@ -500,12 +511,12 @@ Separar completamente la interfaz del proveedor de IA.
 
 Contrato conceptual
 interface ModelProvider {
-  id: string;
-  validateConfiguration(): Promise<ValidationResult>;
-  listModels(): Promise<ModelInfo[]>;
-  stream(request: ChatRequest): AsyncIterable<ChatEvent>;
-  cancel(sessionId: string): Promise<void>;
-  estimateCost?(request: ChatRequest): Promise<CostEstimate>;
+id: string;
+validateConfiguration(): Promise<ValidationResult>;
+listModels(): Promise<ModelInfo[]>;
+stream(request: ChatRequest): AsyncIterable<ChatEvent>;
+cancel(sessionId: string): Promise<void>;
+estimateCost?(request: ChatRequest): Promise<CostEstimate>;
 }
 Adaptadores iniciales
 ollama-local
@@ -562,26 +573,27 @@ Regla de contexto
 Nunca enviar todo el workspace por defecto.
 
 Orden:
+
 1. Selección del usuario
 2. Archivo activo
 3. Archivos relacionados explícitos
 4. Diff de Git
 5. Búsqueda limitada
 6. Expansión solicitada
-Archivos bloqueados inicialmente
-.env
-*.pem
-*.key
-*.pfx
-*.p12
-id_rsa*
-credentials*
-secrets*
-terraform.tfstate*
-.azure/
-.aws/
-.ssh/
-Criterio de salida
+   Archivos bloqueados inicialmente
+   .env
+   _.pem
+   *.key
+   *.pfx
+   *.p12
+   id_rsa*
+   credentials*
+   secrets*
+   terraform.tfstate_
+   .azure/
+   .aws/
+   .ssh/
+   Criterio de salida
 
 Perrito Tech puede responder preguntas sobre un repositorio de prueba y mostrar exactamente los archivos enviados al proveedor.
 
@@ -595,14 +607,14 @@ Permitir que OpenFamiliar delegue tareas a agentes ya autenticados.
 
 Arquitectura
 OpenFamiliar
-     │
+│
 Agent Bridge Protocol
-     ├─ Generic subprocess
-     ├─ Codex adapter
-     ├─ Gemini CLI adapter
-     ├─ OpenCode adapter
-     ├─ Antigravity adapter
-     └─ Kiro feasibility adapter
+├─ Generic subprocess
+├─ Codex adapter
+├─ Gemini CLI adapter
+├─ OpenCode adapter
+├─ Antigravity adapter
+└─ Kiro feasibility adapter
 Principios
 OpenFamiliar no roba ni copia credenciales del CLI.
 El CLI conserva su autenticación.
@@ -727,9 +739,9 @@ OpenFamiliar: Show session
 La extensión será delgada:
 
 Editor
-  ↓ localhost / IPC
+↓ localhost / IPC
 OpenFamiliar Core
-  ↓
+↓
 Provider o agente
 Criterio de salida
 
@@ -744,6 +756,7 @@ Objetivo
 Permitir que una persona no técnica cree su mascota.
 
 Flujo
+
 1. Crear proyecto
 2. Elegir nombre y autor
 3. Seleccionar licencia
@@ -754,20 +767,20 @@ Flujo
 8. Probar eventos
 9. Validar
 10. Exportar .familiar
-Funciones
-Preview en tiempo real.
-Editor de estados.
-Recorte de spritesheet.
-Conversión a WebP.
-Validador de transparencia.
-Vista previa de sonidos.
-Generador de manifiesto.
-Selección guiada de licencia.
-Exportación reproducible.
-Verificación de procedencia.
-Plantilla Perrito Tech.
-Plantilla completamente vacía.
-Criterio de salida
+    Funciones
+    Preview en tiempo real.
+    Editor de estados.
+    Recorte de spritesheet.
+    Conversión a WebP.
+    Validador de transparencia.
+    Vista previa de sonidos.
+    Generador de manifiesto.
+    Selección guiada de licencia.
+    Exportación reproducible.
+    Verificación de procedencia.
+    Plantilla Perrito Tech.
+    Plantilla completamente vacía.
+    Criterio de salida
 
 Una persona puede crear, probar y exportar una mascota sin editar JSON manualmente.
 
@@ -813,11 +826,11 @@ Rendimiento
 
 Objetivos iniciales:
 
-Inicio en frío:       < 3 segundos
-RAM en idle:          < 150 MB
-CPU en idle:          < 1 %
+Inicio en frío: < 3 segundos
+RAM en idle: < 150 MB
+CPU en idle: < 1 %
 Mascot event latency: < 150 ms
-Cancelación:          < 1 segundo
+Cancelación: < 1 segundo
 
 Son objetivos del proyecto, no garantías previas a las pruebas.
 
@@ -896,52 +909,52 @@ Haya al menos dos proveedores y dos agentes estables.
 Estructura del repositorio
 openfamiliar/
 ├─ apps/
-│  ├─ desktop/
-│  ├─ creator-studio/
-│  └─ vscode-extension/
+│ ├─ desktop/
+│ ├─ creator-studio/
+│ └─ vscode-extension/
 │
 ├─ crates/
-│  ├─ familiar-core/
-│  ├─ familiar-context/
-│  ├─ familiar-permissions/
-│  ├─ familiar-storage/
-│  ├─ familiar-agent-bridge/
-│  └─ familiar-mcp/
+│ ├─ familiar-core/
+│ ├─ familiar-context/
+│ ├─ familiar-permissions/
+│ ├─ familiar-storage/
+│ ├─ familiar-agent-bridge/
+│ └─ familiar-mcp/
 │
 ├─ packages/
-│  ├─ mascot-sdk/
-│  ├─ provider-sdk/
-│  ├─ agent-sdk/
-│  ├─ schemas/
-│  └─ ui/
+│ ├─ mascot-sdk/
+│ ├─ provider-sdk/
+│ ├─ agent-sdk/
+│ ├─ schemas/
+│ └─ ui/
 │
 ├─ adapters/
-│  ├─ ollama/
-│  ├─ openai-compatible/
-│  ├─ gemini/
-│  ├─ codex/
-│  ├─ gemini-cli/
-│  ├─ opencode/
-│  └─ antigravity/
+│ ├─ ollama/
+│ ├─ openai-compatible/
+│ ├─ gemini/
+│ ├─ codex/
+│ ├─ gemini-cli/
+│ ├─ opencode/
+│ └─ antigravity/
 │
 ├─ mascots/
-│  ├─ perrito-tech/
-│  └─ blank-template/
+│ ├─ perrito-tech/
+│ └─ blank-template/
 │
 ├─ tools/
-│  └─ familiar-cli/
+│ └─ familiar-cli/
 │
 ├─ examples/
-│  ├─ demo-dotnet/
-│  ├─ demo-terraform/
-│  └─ demo-typescript/
+│ ├─ demo-dotnet/
+│ ├─ demo-terraform/
+│ └─ demo-typescript/
 │
 ├─ docs/
-│  ├─ architecture/
-│  ├─ adr/
-│  ├─ security/
-│  ├─ legal/
-│  └─ guides/
+│ ├─ architecture/
+│ ├─ adr/
+│ ├─ security/
+│ ├─ legal/
+│ └─ guides/
 │
 ├─ LICENSE
 ├─ NOTICE
@@ -971,6 +984,6 @@ mi repo provado de git es git remote add origin https://github.com/georgiegozz/o
 git branch -M main
 git push -u origin main
 
-al final de la implamentacion todo debe de quedar dentro de C:\Users\jorge gonzalez\Music\proyects\openfamiliar y mandar comit y push a main, el repo es privado ahorita también genera un manual de las cosas eu tendría que hacer posterior a la implenentacionpara darse sguimineto
+al final de la implamentacion todo debe de quedar dentro del repositorio OpenFamiliar y mandar comit y push a main, el repo es privado ahorita también genera un manual de las cosas eu tendría que hacer posterior a la implenentacionpara darse sguimineto
 
-implmenta las fases qe esten a tu alcances que creoq ue son casi todo menos lo mnualn y parte crea un documento solo para mi ignorado en gitignore que sea mi seguiminto y que se genere en plan ahíy as deciciones tomadas y porque y siguientes pasos después de ralizar cada fase y is es necesario retrospectiva a la fases y una vez completado comit y push asi hasta finalizar la toda la soluicon, teneindo en cuenta la generación de manual de cosas qu yo tengo que hacerocmo humano  y las prubeas que tendri auq ehacer, al final comi ty push
+implmenta las fases qe esten a tu alcances que creoq ue son casi todo menos lo mnualn y parte crea un documento solo para mi ignorado en gitignore que sea mi seguiminto y que se genere en plan ahíy as deciciones tomadas y porque y siguientes pasos después de ralizar cada fase y is es necesario retrospectiva a la fases y una vez completado comit y push asi hasta finalizar la toda la soluicon, teneindo en cuenta la generación de manual de cosas qu yo tengo que hacerocmo humano y las prubeas que tendri auq ehacer, al final comi ty push

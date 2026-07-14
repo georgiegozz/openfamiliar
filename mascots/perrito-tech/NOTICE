@@ -1,0 +1,14 @@
+Perrito Tech is an original OpenFamiliar character.
+
+The 4x4 pixel-art spritesheet was redesigned in July 2026 with an AI-assisted
+workflow using photographs supplied by the operator as visual references for
+their dark-brindle dog. No source photograph is embedded or distributed in the
+pack. The generated art was chroma-keyed, normalized with nearest-neighbor
+processing, and mapped only to symmetric, event-driven frames. Deterministic
+palette variants modify small state-prop accent colors only. The character is
+collar-free in every variant.
+
+It does not intentionally reproduce a third-party character, logo, or brand.
+
+Artwork attribution: Perrito Tech — OpenFamiliar contributors.
+Artwork license: CC BY 4.0.

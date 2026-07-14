@@ -91,18 +91,20 @@ impl ModelProvider for MockProvider {
             .map(|m| m.content.clone())
             .unwrap_or_default();
         tokio::time::sleep(Duration::from_millis(150)).await;
-        
+
         let text = last.to_lowercase();
-        let reply = if text.contains("benito") || text.contains("juarez") || text.contains("juárez") {
+        let reply = if text.contains("benito") || text.contains("juarez") || text.contains("juárez")
+        {
             "Benito Juárez nació el 21 de marzo de 1806 en Guelatao, Oaxaca. Fue un célebre presidente de México conocido como el «Benemérito de las Américas». ¡Una gran figura de la historia! 🐾".to_string()
         } else if text.contains("hola") || text.contains("hello") || text.contains("buenos dias") {
             "¡Hola! Soy Perrito Tech. Estoy aquí flotando para ayudarte en lo que necesites. ¿En qué programamos hoy? 🐶".to_string()
-        } else if text.contains("cómo estás") || text.contains("como estas") || text.contains("tal") {
+        } else if text.contains("cómo estás") || text.contains("como estas") || text.contains("tal")
+        {
             "¡De maravilla! Listo y atento a tus comandos. ¿Y tú, qué tal va el día? 🐾".to_string()
         } else {
             format!("¡Guau! Recibí tu mensaje: «{}». (Nota: Estoy en modo Demo Offline. Configura tu API key de Gemini o OpenAI en el panel inferior para chatear con IA real). 🐶", last)
         };
-        
+
         Ok(reply)
     }
 }

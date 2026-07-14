@@ -1,1 +1,1 @@
-console.log('adapter-antigravity:build');
+console.log("adapter-antigravity:build");

@@ -1,1 +1,1 @@
-console.log('adapter-openai-compatible:ok');
+console.log("adapter-openai-compatible:ok");

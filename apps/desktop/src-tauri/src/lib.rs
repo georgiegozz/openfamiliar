@@ -1,377 +1,213 @@
-use familiar_core::{ChatMessageDto, FamiliarCore, MascotState};
-use familiar_permissions::SecurityMode;
-use familiar_storage::AppPaths;
-use serde::Serialize;
-use std::path::PathBuf;
-use std::sync::Arc;
-use tauri::{
-    menu::{Menu, MenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, State, WindowEvent,
-};
+mod commands;
+mod domain;
+mod services;
+
+use crate::services::app_paths::AppPaths;
+use crate::services::codex_process::CodexService;
+use crate::services::logging::{SafeEvent, SafeLogger};
+use crate::services::monitor_position::restore_mascot_position;
+use crate::services::preferences::PreferencesStore;
+use std::sync::atomic::AtomicBool;
+use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 
 pub struct AppState {
-    pub core: Arc<FamiliarCore>,
-}
-
-#[derive(Serialize)]
-struct CmdError {
-    message: String,
-}
-
-impl From<String> for CmdError {
-    fn from(message: String) -> Self {
-        Self { message }
-    }
-}
-
-fn parse_mode(mode: &str) -> Result<SecurityMode, String> {
-    match mode {
-        "chat" => Ok(SecurityMode::Chat),
-        "read_only" | "readonly" => Ok(SecurityMode::ReadOnly),
-        "agent" => Ok(SecurityMode::Agent),
-        other => Err(format!("unknown mode {other}")),
-    }
-}
-
-#[tauri::command]
-fn set_mascot_state(state: State<'_, AppState>, state_name: String) -> Result<(), CmdError> {
-    let parsed = MascotState::parse(&state_name).ok_or_else(|| format!("bad state {state_name}"))?;
-    state.core.set_state(parsed);
-    Ok(())
-}
-
-// Frontend may pass { state } — support both via rename in invoke map using serde aliases in a wrapper
-#[tauri::command]
-fn set_mascot_state_v2(state: State<'_, AppState>, args: serde_json::Value) -> Result<(), CmdError> {
-    let name = args
-        .get("state")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| "state required".to_string())?;
-    set_mascot_state(state, name.to_string())
-}
-
-#[tauri::command]
-async fn chat(
-    state: State<'_, AppState>,
-    provider_id: String,
-    model: String,
-    message: String,
-    max_tokens: Option<u32>,
-) -> Result<String, CmdError> {
-    let text = state
-        .core
-        .chat_stream_collect(
-            &provider_id,
-            &model,
-            vec![ChatMessageDto {
-                role: "user".into(),
-                content: message,
-            }],
-            max_tokens,
-        )
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(text)
-}
-
-#[tauri::command]
-async fn chat_args(state: State<'_, AppState>, args: serde_json::Value) -> Result<String, CmdError> {
-    let provider_id = args
-        .get("providerId")
-        .or_else(|| args.get("provider_id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("mock")
-        .to_string();
-    let model = args
-        .get("model")
-        .and_then(|v| v.as_str())
-        .unwrap_or("mock-model")
-        .to_string();
-    let message = args
-        .get("message")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let max_tokens = args
-        .get("maxTokens")
-        .or_else(|| args.get("max_tokens"))
-        .and_then(|v| v.as_u64())
-        .map(|n| n as u32);
-    chat(state, provider_id, model, message, max_tokens).await
-}
-
-#[tauri::command]
-fn authorize_workspace(
-    state: State<'_, AppState>,
-    id: String,
-    path: String,
-) -> Result<(), CmdError> {
-    state
-        .core
-        .authorize_workspace(&id, PathBuf::from(path))
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-fn authorize_workspace_args(
-    state: State<'_, AppState>,
-    args: serde_json::Value,
-) -> Result<(), CmdError> {
-    let id = args
-        .get("id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("default")
-        .to_string();
-    let path = args
-        .get("path")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| "path required".to_string())?
-        .to_string();
-    authorize_workspace(state, id, path)
-}
-
-#[tauri::command]
-fn preview_workspace(
-    state: State<'_, AppState>,
-    id: String,
-    paths: Vec<String>,
-) -> Result<String, CmdError> {
-    if paths.is_empty() {
-        let tree = state.core.tree(&id, 40).map_err(|e| e.to_string())?;
-        return Ok(format!("Tree (first 40):\n{}", tree.join("\n")));
-    }
-    let preview = state
-        .core
-        .preview_context(&id, &paths)
-        .map_err(CmdError::from)?;
-    Ok(serde_json::to_string_pretty(&preview).unwrap_or_default())
-}
-
-#[tauri::command]
-fn preview_workspace_args(
-    state: State<'_, AppState>,
-    args: serde_json::Value,
-) -> Result<String, CmdError> {
-    let id = args
-        .get("id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("default")
-        .to_string();
-    let paths = args
-        .get("paths")
-        .and_then(|v| v.as_array())
-        .map(|a| {
-            a.iter()
-                .filter_map(|x| x.as_str().map(|s| s.to_string()))
-                .collect()
-        })
-        .unwrap_or_default();
-    preview_workspace(state, id, paths)
-}
-
-#[tauri::command]
-fn set_security_mode(state: State<'_, AppState>, mode: String) -> Result<(), CmdError> {
-    let m = parse_mode(&mode)?;
-    state.core.set_security_mode(m);
-    Ok(())
-}
-
-#[tauri::command]
-fn set_security_mode_args(
-    state: State<'_, AppState>,
-    args: serde_json::Value,
-) -> Result<(), CmdError> {
-    let mode = args
-        .get("mode")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| "mode required".to_string())?;
-    set_security_mode(state, mode.to_string())
-}
-
-#[tauri::command]
-fn set_click_through(app: AppHandle, enabled: bool) -> Result<(), CmdError> {
-    if let Some(win) = app.get_webview_window("main") {
-        win.set_ignore_cursor_events(enabled)
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
-#[tauri::command]
-fn set_click_through_args(app: AppHandle, args: serde_json::Value) -> Result<(), CmdError> {
-    let enabled = args
-        .get("enabled")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-    set_click_through(app, enabled)
-}
-
-#[tauri::command]
-fn get_state(state: State<'_, AppState>) -> String {
-    state.core.state().as_str().to_string()
-}
-
-#[tauri::command]
-fn resize_window(app: AppHandle, width: f64, height: f64) -> Result<(), CmdError> {
-    if let Some(win) = app.get_webview_window("main") {
-        let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize { width, height }));
-    }
-    Ok(())
-}
-
-fn load_env_file() {
-    let mut log_content = String::new();
-    let paths = vec![
-        std::path::PathBuf::from(".env"),
-        std::path::PathBuf::from("../.env"),
-        std::path::PathBuf::from("../../.env"),
-        std::path::PathBuf::from("../../../.env"),
-    ];
-    if let Ok(cd) = std::env::current_dir() {
-        log_content.push_str(&format!("Checking env paths. Current dir: {:?}\n", cd));
-    }
-    for path in paths {
-        log_content.push_str(&format!("Checking path: {:?}, exists: {}\n", path, path.exists()));
-        if path.exists() {
-            if let Ok(content) = std::fs::read_to_string(&path) {
-                let mut loaded_keys = Vec::new();
-                for line in content.lines() {
-                    let line = line.trim();
-                    if line.is_empty() || line.starts_with('#') {
-                        continue;
-                    }
-                    if let Some((key, val)) = line.split_once('=') {
-                        let key = key.trim();
-                        let val = val.trim();
-                        let val = val.strip_prefix('"').unwrap_or(val);
-                        let val = val.strip_suffix('"').unwrap_or(val);
-                        let val = val.strip_prefix('\'').unwrap_or(val);
-                        let val = val.strip_suffix('\'').unwrap_or(val);
-                        std::env::set_var(key, val);
-                        loaded_keys.push(key.to_string());
-                    }
-                }
-                log_content.push_str(&format!("Loaded keys from {:?}: {:?}\n", path, loaded_keys));
-                break;
-            }
-        }
-    }
-    if let Ok(mut f) = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log")
-    {
-        use std::io::Write;
-        let _ = writeln!(f, "{}", log_content);
-    }
-}
-
-fn build_core() -> Result<FamiliarCore, String> {
-    match AppPaths::discover() {
-        Ok(paths) => {
-            let _ = paths.ensure();
-            FamiliarCore::open(&paths.db_path, &paths.audit_path).map_err(|e| e.to_string())
-        }
-        Err(_) => FamiliarCore::in_memory().map_err(|e| e.to_string()),
-    }
+    pub codex: CodexService,
+    pub preferences: PreferencesStore,
+    pub logger: SafeLogger,
+    pub mascot_expanded: AtomicBool,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    load_env_file();
-    let _ = std::fs::write("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log", "run() started\n");
-    let core = Arc::new(build_core().expect("core init"));
+    let paths = AppPaths::discover().expect("Windows application paths");
+    paths.ensure().expect("application directories");
+    let logger = SafeLogger::new(paths.log_dir.clone());
+    logger.event(SafeEvent::AppStarted);
+    let preferences = PreferencesStore::load(paths.config_path.clone());
+    let mut startup_preferences = preferences.get();
+    if startup_preferences.click_through {
+        startup_preferences.click_through = false;
+        let _ = preferences.replace(startup_preferences);
+    }
+    let codex = CodexService::new(paths.neutral_work_dir, logger.clone());
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
-        .manage(AppState { core })
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
+        .manage(AppState {
+            codex,
+            preferences,
+            logger,
+            mascot_expanded: AtomicBool::new(false),
+        })
         .invoke_handler(tauri::generate_handler![
-            set_mascot_state,
-            set_mascot_state_v2,
-            chat,
-            chat_args,
-            authorize_workspace,
-            authorize_workspace_args,
-            preview_workspace,
-            preview_workspace_args,
-            set_security_mode,
-            set_security_mode_args,
-            set_click_through,
-            set_click_through_args,
-            get_state,
-            resize_window
+            commands::detect_codex,
+            commands::ask_codex,
+            commands::cancel_codex,
+            commands::get_preferences,
+            commands::update_preferences,
+            commands::open_settings,
+            commands::open_quick_ask,
+            commands::set_click_through,
+            commands::set_always_on_top,
+            commands::set_mascot_expanded,
+            commands::save_mascot_position,
+            commands::reset_mascot_position,
+            commands::quit_app,
         ])
         .setup(|app| {
-            let has_main = app.get_webview_window("main").is_some();
-            let windows: Vec<String> = app.webview_windows().keys().cloned().collect();
-            if let Ok(mut f) = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log")
-            {
-                use std::io::Write;
-                let _ = writeln!(f, "setup() reached. has_main: {}, all windows: {:?}", has_main, windows);
+            let app_handle = app.handle().clone();
+            let state = app.state::<AppState>();
+            let preferences = state.preferences.get();
+            if let Some(window) = app.get_webview_window("mascot") {
+                window.set_always_on_top(preferences.always_on_top)?;
+                window.set_ignore_cursor_events(false)?;
             }
-            // Map frontend camelCase commands to *_args handlers by registering aliases via JS.
-            // Also create tray.
-            let quit = MenuItem::with_id(app, "quit", "Quit OpenFamiliar", true, None::<&str>)?;
-            let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show, &quit])?;
-            let _tray = TrayIconBuilder::new()
-                .menu(&menu)
-                .tooltip("OpenFamiliar")
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "quit" => app.exit(0),
-                    "show" => {
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.show();
-                            let _ = w.set_focus();
-                        }
-                    }
-                    _ => {}
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        let app = tray.app_handle();
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.show();
-                            let _ = w.set_focus();
-                        }
-                    }
-                })
-                .build(app)?;
+            commands::set_mascot_expanded_internal(&app_handle, &state, false)
+                .map_err(|error| std::io::Error::other(error.message))?;
+            let _ = restore_mascot_position(&app_handle, preferences.mascot_position.as_ref());
+            build_tray(app)?;
 
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = win.show();
-                let _ = win.set_focus();
-                let app_handle = app.handle().clone();
-                win.on_window_event(move |e| {
-                    if let WindowEvent::CloseRequested { api, .. } = e {
-                        // hide to tray instead of exit
-                        api.prevent_close();
-                        if let Some(w) = app_handle.get_webview_window("main") {
-                            let _ = w.hide();
+            for label in ["mascot", "settings"] {
+                if let Some(window) = app.get_webview_window(label) {
+                    let handle = app_handle.clone();
+                    let owned_label = label.to_string();
+                    window.on_window_event(move |event| {
+                        if let WindowEvent::CloseRequested { api, .. } = event {
+                            api.prevent_close();
+                            if let Some(window) = handle.get_webview_window(&owned_label) {
+                                let _ = window.hide();
+                            }
+                            if owned_label == "settings" {
+                                if let Some(mascot) = handle.get_webview_window("mascot") {
+                                    let _ = mascot.show();
+                                }
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
-            let _ = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log")
-                .map(|mut f| {
-                    use std::io::Write;
-                    let _ = writeln!(f, "setup() completed successfully");
-                });
             Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running OpenFamiliar");
+}
+
+fn build_tray(app: &tauri::App) -> tauri::Result<()> {
+    let state = app.state::<AppState>();
+    let preferences = state.preferences.get();
+    let ask = MenuItem::with_id(app, "ask", "Ask Codex", true, None::<&str>)?;
+    let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
+    let always_on_top = CheckMenuItem::with_id(
+        app,
+        "always_on_top",
+        "Always on top",
+        true,
+        preferences.always_on_top,
+        None::<&str>,
+    )?;
+    let click_through = CheckMenuItem::with_id(
+        app,
+        "click_through",
+        "Click-through",
+        true,
+        false,
+        None::<&str>,
+    )?;
+    let reset = MenuItem::with_id(app, "reset_position", "Reset position", true, None::<&str>)?;
+    let about = MenuItem::with_id(app, "about", "About", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let separator = PredefinedMenuItem::separator(app)?;
+    let menu = Menu::with_items(
+        app,
+        &[
+            &ask,
+            &settings,
+            &separator,
+            &always_on_top,
+            &click_through,
+            &reset,
+            &about,
+            &separator,
+            &quit,
+        ],
+    )?;
+    let always_item = always_on_top.clone();
+    let click_item = click_through.clone();
+    let click_item_for_tray = click_through.clone();
+    let icon = app.default_window_icon().cloned();
+    let mut builder = TrayIconBuilder::new()
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .tooltip("OpenFamiliar — Perrito Tech")
+        .on_menu_event(move |app, event| {
+            let state = app.state::<AppState>();
+            match event.id.as_ref() {
+                "ask" => {
+                    if commands::show_quick_ask_internal(app, &state).is_ok() {
+                        let _ = click_item.set_checked(false);
+                    }
+                }
+                "settings" => {
+                    let _ = commands::open_settings_internal(app);
+                }
+                "always_on_top" => {
+                    let next = !state.preferences.get().always_on_top;
+                    if commands::set_always_on_top_internal(app, &state, next).is_ok() {
+                        let _ = always_item.set_checked(next);
+                    }
+                }
+                "click_through" => {
+                    let next = !state.preferences.get().click_through;
+                    if commands::set_click_through_internal(app, &state, next).is_ok() {
+                        let _ = click_item.set_checked(next);
+                    }
+                }
+                "reset_position" => {
+                    let mut preferences = state.preferences.get();
+                    preferences.mascot_position = None;
+                    let _ = state.preferences.replace(preferences);
+                    let _ = restore_mascot_position(app, None);
+                }
+                "about" => {
+                    let _ = commands::open_settings_internal(app);
+                    if let Some(window) = app.get_webview_window("settings") {
+                        let _ = window.emit("settings:section", "about");
+                    }
+                }
+                "quit" => {
+                    let handle = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        let state = handle.state::<AppState>();
+                        state.codex.cancel_all().await;
+                        state.logger.event(SafeEvent::AppStopped);
+                        handle.exit(0);
+                    });
+                }
+                _ => {}
+            }
+        })
+        .on_tray_icon_event(move |tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                let app = tray.app_handle();
+                let state = app.state::<AppState>();
+                if commands::show_quick_ask_internal(app, &state).is_ok() {
+                    let _ = click_item_for_tray.set_checked(false);
+                }
+            }
+        });
+    if let Some(icon) = icon {
+        builder = builder.icon(icon);
+    }
+    builder.build(app)?;
+    Ok(())
 }

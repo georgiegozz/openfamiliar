@@ -1,1 +1,1 @@
-console.log('adapter-antigravity:ok');
+console.log("adapter-antigravity:ok");

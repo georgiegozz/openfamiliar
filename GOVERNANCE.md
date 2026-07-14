@@ -7,12 +7,12 @@ a public open-source beta.
 
 ## Decision making
 
-| Area | Owner |
-|------|--------|
-| Product scope & roadmap | Maintainer (georgiegozz) |
-| Architecture ADRs | Maintainer; community review once public |
-| Security-sensitive changes | Maintainer approval required |
-| License / trademark policy | Maintainer |
+| Area                       | Owner                                    |
+| -------------------------- | ---------------------------------------- |
+| Product scope & roadmap    | Maintainer (georgiegozz)                 |
+| Architecture ADRs          | Maintainer; community review once public |
+| Security-sensitive changes | Maintainer approval required             |
+| License / trademark policy | Maintainer                               |
 
 ## ADRs
 

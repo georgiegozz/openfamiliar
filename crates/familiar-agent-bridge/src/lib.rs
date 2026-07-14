@@ -16,16 +16,45 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum AgentEvent {
-    SessionStarted { session_id: String, agent: String },
-    Thinking { session_id: String, message: String },
-    Reading { session_id: String, path: String },
-    Editing { session_id: String, path: String },
-    Running { session_id: String, command: String },
-    WaitingApproval { session_id: String, request_id: String },
-    Completed { session_id: String, summary: String },
-    Failed { session_id: String, error: String },
-    Cancelled { session_id: String },
-    Log { session_id: String, line: String },
+    SessionStarted {
+        session_id: String,
+        agent: String,
+    },
+    Thinking {
+        session_id: String,
+        message: String,
+    },
+    Reading {
+        session_id: String,
+        path: String,
+    },
+    Editing {
+        session_id: String,
+        path: String,
+    },
+    Running {
+        session_id: String,
+        command: String,
+    },
+    WaitingApproval {
+        session_id: String,
+        request_id: String,
+    },
+    Completed {
+        session_id: String,
+        summary: String,
+    },
+    Failed {
+        session_id: String,
+        error: String,
+    },
+    Cancelled {
+        session_id: String,
+    },
+    Log {
+        session_id: String,
+        line: String,
+    },
 }
 
 #[derive(Debug, Error)]
@@ -165,11 +194,7 @@ impl AgentBridge {
             Arc::new(codex_adapter()),
             Arc::new(opencode_adapter()),
             Arc::new(antigravity_adapter()),
-            Arc::new(GenericSubprocessAdapter::new(
-                "generic",
-                "echo",
-                vec![],
-            )),
+            Arc::new(GenericSubprocessAdapter::new("generic", "echo", vec![])),
         ];
         for a in list {
             adapters.insert(a.id().to_string(), a);
@@ -388,7 +413,12 @@ mod tests {
         let bridge = AgentBridge::new(broker);
         let (tx, _rx) = mpsc::channel(10);
         let result = bridge
-            .start("generic", "test task", std::path::PathBuf::from("C:/ws"), tx)
+            .start(
+                "generic",
+                "test task",
+                std::path::PathBuf::from("C:/ws"),
+                tx,
+            )
             .await;
         // In chat mode start() must fail — either because the adapter
         // binary is unavailable (Windows: echo is a shell built-in) or

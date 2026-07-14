@@ -1,1 +1,1 @@
-console.log('adapter-codex:ok');
+console.log("adapter-codex:ok");
