@@ -2,8 +2,8 @@
 
 ## Supported versions
 
-| Version | Supported |
-|---------|-----------|
+| Version       | Supported                                         |
+| ------------- | ------------------------------------------------- |
 | 0.x (pre-1.0) | Best-effort on latest `main` / latest pre-release |
 
 ## Reporting a vulnerability

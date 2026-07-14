@@ -9,13 +9,29 @@ export const familiarV1Schema = JSON.parse(
 
 export function validateManifestShape(manifest) {
   const errors = [];
-  for (const key of ["id", "name", "version", "engine", "author", "license", "personality", "states"]) {
+  for (const key of [
+    "id",
+    "name",
+    "version",
+    "engine",
+    "author",
+    "license",
+    "personality",
+    "states",
+  ]) {
     if (manifest == null || manifest[key] == null || manifest[key] === "") {
       errors.push(`missing ${key}`);
     }
   }
   if (manifest?.states) {
-    for (const s of ["idle", "thinking", "working", "approval", "success", "error"]) {
+    for (const s of [
+      "idle",
+      "thinking",
+      "working",
+      "approval",
+      "success",
+      "error",
+    ]) {
       if (!manifest.states[s]) errors.push(`missing state ${s}`);
     }
   }

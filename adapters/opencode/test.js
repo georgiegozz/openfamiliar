@@ -1,1 +1,1 @@
-console.log('adapter-opencode:ok');
+console.log("adapter-opencode:ok");

@@ -5,18 +5,42 @@
   "version": "0.1.0",
   "publisher": "openfamiliar",
   "license": "Apache-2.0",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onCommand:openfamiliar.askSelection"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:openfamiliar.askSelection"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      { "command": "openfamiliar.askSelection", "title": "OpenFamiliar: Ask about selection" },
-      { "command": "openfamiliar.explainActive", "title": "OpenFamiliar: Explain active file" },
-      { "command": "openfamiliar.reviewDiff", "title": "OpenFamiliar: Review Git diff" },
-      { "command": "openfamiliar.addToContext", "title": "OpenFamiliar: Add file to context" },
-      { "command": "openfamiliar.startAgent", "title": "OpenFamiliar: Start agent task" },
-      { "command": "openfamiliar.showSession", "title": "OpenFamiliar: Show session" }
+      {
+        "command": "openfamiliar.askSelection",
+        "title": "OpenFamiliar: Ask about selection"
+      },
+      {
+        "command": "openfamiliar.explainActive",
+        "title": "OpenFamiliar: Explain active file"
+      },
+      {
+        "command": "openfamiliar.reviewDiff",
+        "title": "OpenFamiliar: Review Git diff"
+      },
+      {
+        "command": "openfamiliar.addToContext",
+        "title": "OpenFamiliar: Add file to context"
+      },
+      {
+        "command": "openfamiliar.startAgent",
+        "title": "OpenFamiliar: Start agent task"
+      },
+      {
+        "command": "openfamiliar.showSession",
+        "title": "OpenFamiliar: Show session"
+      }
     ],
     "configuration": {
       "title": "OpenFamiliar",

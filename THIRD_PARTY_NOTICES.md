@@ -12,14 +12,14 @@ builds. Entries are added as dependencies are pinned and audited.
 
 ## Conceptual references (no code copied)
 
-| Project | License noted | Use in OpenFamiliar |
-|---------|---------------|---------------------|
-| OpenPets | MIT | Architecture study only |
-| CoPet | MIT | Architecture study only (Tauri/React pet shell) |
-| DeskPet | MIT (some assets excluded) | Security/provider ideas only |
-| Clawd on Desk | AGPL-3.0 + reserved assets | Conceptual reference only — no code/assets |
-| OpenCode Companion | License unclear | Conceptual reference only — no code/assets |
-| Open-LLM-VTuber | MIT core + separate Live2D model licenses | Demonstrates code/art license split |
+| Project            | License noted                             | Use in OpenFamiliar                             |
+| ------------------ | ----------------------------------------- | ----------------------------------------------- |
+| OpenPets           | MIT                                       | Architecture study only                         |
+| CoPet              | MIT                                       | Architecture study only (Tauri/React pet shell) |
+| DeskPet            | MIT (some assets excluded)                | Security/provider ideas only                    |
+| Clawd on Desk      | AGPL-3.0 + reserved assets                | Conceptual reference only — no code/assets      |
+| OpenCode Companion | License unclear                           | Conceptual reference only — no code/assets      |
+| Open-LLM-VTuber    | MIT core + separate Live2D model licenses | Demonstrates code/art license split             |
 
 ## Runtime dependencies
 
