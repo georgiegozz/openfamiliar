@@ -1,0 +1,5 @@
+interface:
+  display_name: "OpenFamiliar Release"
+  short_description: "Validate and package the Windows MVP"
+  brand_color: "#43D7B0"
+  default_prompt: "Use $openfamiliar-release to validate and package a local Windows MVP build."
