@@ -14,15 +14,26 @@ only in the explicitly marked human steps.
 ## Startup and Visuals
 
 - [ ] Launch from Start. Perrito Tech appears without console or technical panel.
+- [ ] With default scale, the compact input window is 152×152 px and the sprite
+      viewport is 128×128 px (one third smaller than the former 192 px default).
 - [ ] Window background and sprite edges are truly transparent.
 - [ ] Sprite pixels remain crisp at 100%, 125%, and 150% Windows scale.
-- [ ] Idle, blink/look, thinking, success, error, sleep, and wake are visually sane.
+- [ ] Leave the pointer and keyboard untouched for 60 seconds: position, frame,
+      head, and both eyes remain unchanged; there is no random blink/look/sleep.
+- [ ] Both eyes remain symmetric during idle and request-state transitions.
+- [ ] Listening, thinking, answering, success, error, wake, and dragging frames
+      are visually sane and appear only in response to an explicit event.
+- [ ] Every stable event frame looks friendly and collar-free.
+- [ ] Teal, midnight, and burgundy palettes change only small state props without
+      changing coat, white markings, eye geometry, neck, transparency, or frame alignment.
 - [ ] Idle operation produces no network traffic and remains near 0–1% CPU after soak.
 
 ## Interaction
 
 - [ ] Single click toggles Quick Ask.
-- [ ] A movement of about 5 px starts drag and does not also open Quick Ask.
+- [ ] Drag starts only from the visible handle after about 5 px and does not open Quick Ask.
+- [ ] The drag handle is no larger than 48×24 px; dragging elsewhere is disabled.
+- [ ] Empty transparent pixels outside compact 152×152 do not intercept other apps.
 - [ ] Right-click opens the small menu; Settings opens the normal settings window.
 - [ ] Enter submits; Shift+Enter creates a line; Escape closes/cancels.
 - [ ] Response scrolls, basic fenced code is readable, Copy works, New clears all content.
@@ -43,6 +54,9 @@ only in the explicitly marked human steps.
 - [ ] Enable Click-through, then recover interaction using tray Ask.
 - [ ] Restart resets unsafe click-through while preserving allowed preferences.
 - [ ] Always-on-top, scale, animation, reduced motion, language, timeout, and startup persist.
+- [ ] Click Save twice with startup disabled and its registry entry absent; both
+      saves succeed without `os error 2`.
+- [ ] Change scale or timeout, save, reopen Settings, and confirm the value persisted.
 - [ ] Quit during a request removes all Codex child processes and exits all windows.
 
 ## Monitor and DPI

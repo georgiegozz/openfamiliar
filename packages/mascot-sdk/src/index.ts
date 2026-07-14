@@ -43,6 +43,7 @@ export interface FamiliarManifest {
   assetSources?: string[];
   aiGenerated?: boolean;
   spriteSheet?: SpriteSheetDefinition;
+  variants?: Record<string, string>;
   animations?: Record<string, SpriteAnimationDefinition>;
 }
 

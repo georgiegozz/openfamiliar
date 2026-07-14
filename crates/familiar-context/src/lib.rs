@@ -91,7 +91,11 @@ impl WorkspaceContext {
         }
     }
 
-    pub fn authorize_root(&mut self, id: impl Into<String>, path: impl Into<PathBuf>) -> Result<()> {
+    pub fn authorize_root(
+        &mut self,
+        id: impl Into<String>,
+        path: impl Into<PathBuf>,
+    ) -> Result<()> {
         let path = path.into().clean();
         if !path.exists() {
             return Err(ContextError::Io(std::io::Error::new(
@@ -228,7 +232,10 @@ impl WorkspaceContext {
             .output();
         match output {
             Ok(o) if o.status.success() => Ok(String::from_utf8_lossy(&o.stdout).to_string()),
-            Ok(o) => Ok(format!("git status failed: {}", String::from_utf8_lossy(&o.stderr))),
+            Ok(o) => Ok(format!(
+                "git status failed: {}",
+                String::from_utf8_lossy(&o.stderr)
+            )),
             Err(e) => Ok(format!("git unavailable: {e}")),
         }
     }
@@ -266,7 +273,8 @@ fn is_sensitive(path: &Path) -> bool {
 
 fn pat_match(pattern: &str, value: &str) -> bool {
     if let Some(prefix) = pattern.strip_suffix('*') {
-        return value.starts_with(prefix) || value.to_lowercase().starts_with(&prefix.to_lowercase());
+        return value.starts_with(prefix)
+            || value.to_lowercase().starts_with(&prefix.to_lowercase());
     }
     if let Some(suffix) = pattern.strip_prefix('*') {
         return value.ends_with(suffix) || value.to_lowercase().ends_with(&suffix.to_lowercase());

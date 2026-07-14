@@ -36,22 +36,25 @@ export function MascotWindow() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dragStart = useRef<{ x: number; y: number }>();
   const dragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const suppressClick = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const visualState: MascotVisualState = useMemo(() => {
-    if (dragging.current) return "dragging";
+    if (isDragging) return "dragging";
     if (ask.phase === "submitting") return "thinking";
     if (ask.phase === "answered") return "success";
     if (ask.phase === "error") return "error";
     if (ask.open) return "listening";
     return "idle";
-  }, [ask.open, ask.phase]);
+  }, [ask.open, ask.phase, isDragging]);
 
   const openAsk = useCallback(() => {
-    dispatch({ type: "open" });
-    setMenuOpen(false);
-    window.setTimeout(() => inputRef.current?.focus(), 0);
+    void backend.setMascotExpanded(true).then(() => {
+      dispatch({ type: "open" });
+      setMenuOpen(false);
+      window.setTimeout(() => inputRef.current?.focus(), 0);
+    });
   }, []);
 
   useEffect(() => {
@@ -61,11 +64,10 @@ export function MascotWindow() {
     let disposed = false;
     const cleanups: Array<() => void> = [];
     void (async () => {
-      const [{ listen }, { currentMonitor, getCurrentWindow }] =
-        await Promise.all([
-          import("@tauri-apps/api/event"),
-          import("@tauri-apps/api/window"),
-        ]);
+      const [{ listen }, { getCurrentWindow }] = await Promise.all([
+        import("@tauri-apps/api/event"),
+        import("@tauri-apps/api/window"),
+      ]);
       if (disposed) return;
       cleanups.push(await listen("quick-ask:open", openAsk));
       const currentWindow = getCurrentWindow();
@@ -74,14 +76,7 @@ export function MascotWindow() {
         await currentWindow.onMoved(({ payload }) => {
           window.clearTimeout(saveTimer);
           saveTimer = window.setTimeout(() => {
-            void currentMonitor().then((monitor) =>
-              backend.saveMascotPosition({
-                x: payload.x,
-                y: payload.y,
-                monitorName: monitor?.name ?? undefined,
-                scaleFactor: monitor?.scaleFactor ?? 1,
-              }),
-            );
+            void backend.saveMascotPosition();
           }, 250);
         }),
       );
@@ -118,17 +113,31 @@ export function MascotWindow() {
     if (ask.phase === "submitting" && ask.requestId)
       void backend.cancelCodex(ask.requestId);
     dispatch({ type: "close" });
-  }, [ask.phase, ask.requestId]);
+    void backend.setMascotExpanded(menuOpen);
+  }, [ask.phase, ask.requestId, menuOpen]);
+
+  useEffect(() => {
+    if (!ask.open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeAsk();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [ask.open, closeAsk]);
 
   const startWindowDrag = useCallback(async () => {
     if (!isTauri()) return;
     dragging.current = true;
+    setIsDragging(true);
     suppressClick.current = true;
     try {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       await getCurrentWindow().startDragging();
     } finally {
       dragging.current = false;
+      setIsDragging(false);
       window.setTimeout(() => {
         suppressClick.current = false;
       }, 80);
@@ -209,7 +218,6 @@ export function MascotWindow() {
                 dispatch({ type: "edit", value: event.target.value })
               }
               onKeyDown={(event) => {
-                if (event.key === "Escape") closeAsk();
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
                   void submit();
@@ -249,49 +257,89 @@ export function MascotWindow() {
         )}
       </section>
 
-      <div
-        className="mascot-drag-zone"
-        onContextMenu={(event) => {
-          event.preventDefault();
-          setMenuOpen((current) => !current);
-        }}
-        onPointerDown={(event) => {
-          if (event.button === 0)
+      <div className="mascot-anchor">
+        <div
+          className="mascot-click-zone"
+          role="button"
+          tabIndex={0}
+          aria-label="Abrir pregunta rápida a Codex"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              if (ask.open) closeAsk();
+              else openAsk();
+            }
+          }}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            const next = !menuOpen;
+            setMenuOpen(next);
+            void backend.setMascotExpanded(next || ask.open);
+          }}
+          onClick={() => {
+            if (!suppressClick.current) {
+              if (ask.open) closeAsk();
+              else openAsk();
+            }
+          }}
+          title="Clic: preguntar · Clic derecho: menú"
+        >
+          <MascotSprite
+            state={visualState}
+            scale={preferences.scale}
+            palette={preferences.mascotPalette}
+            animationsEnabled={preferences.animationsEnabled}
+            reduceMotion={preferences.reduceMotion}
+          />
+        </div>
+        <button
+          className="mascot-drag-handle"
+          aria-label="Mover Perrito Tech"
+          title="Arrastrar para mover"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            if (event.button !== 0) return;
             dragStart.current = { x: event.clientX, y: event.clientY };
-        }}
-        onPointerMove={(event) => {
-          if (!dragStart.current || dragging.current) return;
-          const distance = Math.hypot(
-            event.clientX - dragStart.current.x,
-            event.clientY - dragStart.current.y,
-          );
-          if (distance >= 5) void startWindowDrag();
-        }}
-        onClick={() => {
-          if (!suppressClick.current) {
-            if (ask.open) closeAsk();
-            else openAsk();
-          }
-        }}
-        title="Clic: preguntar · Arrastrar: mover · Clic derecho: menú"
-      >
-        <MascotSprite
-          state={visualState}
-          scale={preferences.scale}
-          animationsEnabled={preferences.animationsEnabled}
-          reduceMotion={preferences.reduceMotion}
-        />
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={(event) => {
+            event.stopPropagation();
+            if (!dragStart.current || dragging.current) return;
+            const distance = Math.hypot(
+              event.clientX - dragStart.current.x,
+              event.clientY - dragStart.current.y,
+            );
+            if (distance >= 4) void startWindowDrag();
+          }}
+          onPointerUp={(event) => {
+            event.stopPropagation();
+            dragStart.current = undefined;
+          }}
+        >
+          <span aria-hidden="true">•••</span>
+        </button>
       </div>
 
       {menuOpen ? (
         <nav className="mini-menu" aria-label="Menú de Perrito Tech">
           <button onClick={openAsk}>Preguntar</button>
-          <button onClick={() => void backend.openSettings()}>Ajustes</button>
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              void backend
+                .setMascotExpanded(false)
+                .then(() => backend.openSettings());
+            }}
+          >
+            Ajustes
+          </button>
           <button
             onClick={() =>
               void backend.setClickThrough(true).then((next) => {
                 setPreferences(next);
                 setMenuOpen(false);
+                void backend.setMascotExpanded(false);
               })
             }
           >

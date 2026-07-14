@@ -1,7 +1,5 @@
 import {
   MascotRuntime,
-  chooseAmbientAction,
-  nextAmbientDelay,
   type FrameSnapshot,
   type MascotVisualState,
 } from "@openfamiliar/mascot-runtime";
@@ -15,10 +13,8 @@ interface RuntimeOptions {
 export function useMascotRuntime(
   visualState: MascotVisualState,
   options: RuntimeOptions,
-): { snapshot: FrameSnapshot; markActivity: () => void } {
+): FrameSnapshot {
   const runtimeRef = useRef(new MascotRuntime());
-  const visualStateRef = useRef(visualState);
-  const lastActivityRef = useRef(Date.now());
   const [documentVisible, setDocumentVisible] = useState(
     () => !document.hidden,
   );
@@ -32,29 +28,20 @@ export function useMascotRuntime(
     );
   }, []);
 
-  const markActivity = useCallback(() => {
-    lastActivityRef.current = Date.now();
-    if (visualStateRef.current === "idle") {
-      const current = runtimeRef.current.current();
-      publish(
-        current.animation === "sleeping"
-          ? runtimeRef.current.play("wake", true)
-          : runtimeRef.current.playState("idle", true),
-      );
-    }
-  }, [publish]);
-
   useEffect(() => {
-    visualStateRef.current = visualState;
-    lastActivityRef.current = Date.now();
     publish(runtimeRef.current.playState(visualState, true));
   }, [publish, visualState]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;
+    const definition = runtime.manifest.animations[snapshot.animation];
     if (!options.enabled || options.reduceMotion || !documentVisible) {
       runtime.pause();
       publish(runtime.current());
+      return;
+    }
+    if (!definition || definition.frames.length <= 1) {
+      runtime.pause();
       return;
     }
 
@@ -66,7 +53,13 @@ export function useMascotRuntime(
       lastTick = now;
     }, 100);
     return () => window.clearInterval(interval);
-  }, [documentVisible, options.enabled, options.reduceMotion, publish]);
+  }, [
+    documentVisible,
+    options.enabled,
+    options.reduceMotion,
+    publish,
+    snapshot.animation,
+  ]);
 
   useEffect(() => {
     const handleVisibility = () => setDocumentVisible(!document.hidden);
@@ -75,41 +68,5 @@ export function useMascotRuntime(
       document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
-  useEffect(() => {
-    if (!options.enabled || options.reduceMotion || visualState !== "idle")
-      return;
-    let ambientTimer = 0;
-    let sleepTimer = 0;
-
-    const scheduleAmbient = () => {
-      ambientTimer = window.setTimeout(() => {
-        if (
-          visualStateRef.current === "idle" &&
-          Date.now() - lastActivityRef.current <
-            runtimeRef.current.manifest.sleepAfterMs
-        ) {
-          publish(runtimeRef.current.play(chooseAmbientAction(Math.random())));
-        }
-        scheduleAmbient();
-      }, nextAmbientDelay(Math.random()));
-    };
-
-    scheduleAmbient();
-    sleepTimer = window.setInterval(() => {
-      if (
-        visualStateRef.current === "idle" &&
-        Date.now() - lastActivityRef.current >=
-          runtimeRef.current.manifest.sleepAfterMs
-      ) {
-        publish(runtimeRef.current.playState("sleeping", true));
-      }
-    }, 15_000);
-
-    return () => {
-      window.clearTimeout(ambientTimer);
-      window.clearInterval(sleepTimer);
-    };
-  }, [options.enabled, options.reduceMotion, publish, visualState]);
-
-  return { snapshot, markActivity };
+  return snapshot;
 }

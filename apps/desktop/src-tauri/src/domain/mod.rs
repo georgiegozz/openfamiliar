@@ -72,6 +72,7 @@ pub struct AppPreferences {
     pub click_through: bool,
     pub animations_enabled: bool,
     pub reduce_motion: bool,
+    pub mascot_palette: String,
     pub language: String,
     pub launch_at_startup: bool,
     pub codex_path: Option<String>,
@@ -87,6 +88,7 @@ impl Default for AppPreferences {
             click_through: false,
             animations_enabled: true,
             reduce_motion: false,
+            mascot_palette: "teal".to_string(),
             language: "es-MX".to_string(),
             launch_at_startup: false,
             codex_path: None,
@@ -104,6 +106,11 @@ impl AppPreferences {
         self.language = match self.language.as_str() {
             "en-US" => "en-US".to_string(),
             _ => "es-MX".to_string(),
+        };
+        self.mascot_palette = match self.mascot_palette.as_str() {
+            "midnight" => "midnight".to_string(),
+            "burgundy" => "burgundy".to_string(),
+            _ => "teal".to_string(),
         };
         self.codex_path = self.codex_path.and_then(|path| {
             let trimmed = path.trim();

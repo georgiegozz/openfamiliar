@@ -1,48 +1,32 @@
-# Privacy Policy (product intent)
+# Privacy Policy — Windows MVP
 
-OpenFamiliar is designed as a **local-first** desktop application.
+OpenFamiliar is a local-first desktop application with no OpenFamiliar account,
+cloud backend, analytics, or telemetry.
 
-## What stays on your machine
+## Stored locally
 
-- Chat history (local SQLite)
-- Audit logs (local JSONL)
-- Workspace paths you authorize
-- Pack files you import
-- Configuration (non-secret)
+- Non-sensitive preferences such as mascot scale, palette, motion, language,
+  timeout, startup, and window position.
+- Category-only operational logs used for diagnostics.
 
-## Secrets
+The stable MVP does **not** store chat history, answers, workspace paths,
+workspace files, API keys, Codex tokens, or raw Codex stdout/stderr. Questions
+and answers exist in application memory only for the current ephemeral request.
 
-API keys are stored using the operating system credential store abstraction
-(Windows Credential Manager / Keychain-equivalent). Keys are never written to
-logs, screenshots, or pack files.
+## Codex CLI and network
 
-## Network
+When the operator submits a question, OpenFamiliar starts the installed Codex
+CLI in a fresh read-only process. Codex CLI owns its authentication and network
+interaction under its own configuration and terms. OpenFamiliar does not read
+or copy Codex authentication storage and does not add workspace context.
 
-OpenFamiliar only contacts endpoints you configure:
+No request is started by idle animation, startup, palette selection, or mascot
+movement. Browser sessions and cookies are never scraped.
 
-- Local Ollama
-- Official provider APIs (OpenAI-compatible, Gemini, etc.)
-- Agent CLIs you launch
+## Sharing diagnostics
 
-There is **no** OpenFamiliar cloud account in the MVP and **no** automatic
-upload of workspace files.
+There is no automatic log upload. Any diagnostic report is shared voluntarily;
+review it using `docs/guides/share-diagnostics.md` before publication.
 
-## Telemetry
-
-Telemetry is **disabled by default**. If optional diagnostics are added later,
-they will require explicit opt-in and will not include file contents or secrets.
-
-## Beta / private testing
-
-- No automatic log shipping
-- Voluntary reports only
-- Use the secret-redaction checklist before sharing diagnostics
-  (`docs/guides/share-diagnostics.md`)
-
-## Context sent to models
-
-Only content you select or that falls under an explicit context budget is sent.
-The UI shows a context preview before sending when workspace mode is enabled.
-
-This document describes product intent for the open-source project and is not
-legal advice for every deployment scenario.
+This document describes the implemented pre-1.0 product and is not legal advice
+for every deployment scenario.

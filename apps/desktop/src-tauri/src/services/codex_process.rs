@@ -117,9 +117,7 @@ impl CodexService {
             }
             _ => false,
         };
-        let authenticated = login_status
-            .map(|output| output.success)
-            .unwrap_or(false);
+        let authenticated = login_status.map(|output| output.success).unwrap_or(false);
 
         if compatible {
             self.logger.event(SafeEvent::CodexDetected);
@@ -220,12 +218,14 @@ impl CodexService {
         );
         self.logger.event(SafeEvent::RequestStarted);
 
-        let stdout = child.stdout.take().ok_or_else(|| {
-            CommandError::new(ErrorKind::Unknown, "No se pudo capturar stdout.")
-        })?;
-        let stderr = child.stderr.take().ok_or_else(|| {
-            CommandError::new(ErrorKind::Unknown, "No se pudo capturar stderr.")
-        })?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| CommandError::new(ErrorKind::Unknown, "No se pudo capturar stdout."))?;
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| CommandError::new(ErrorKind::Unknown, "No se pudo capturar stderr."))?;
         let stdout_task = tokio::spawn(read_capped(stdout, MAX_RESPONSE_BYTES));
         let stderr_task = tokio::spawn(read_capped(stderr, MAX_RESPONSE_BYTES));
 
@@ -242,11 +242,7 @@ impl CodexService {
             let _ = stdin.shutdown().await;
         }
 
-        let wait_result = timeout(
-            Duration::from_secs(request.timeout_seconds),
-            child.wait(),
-        )
-        .await;
+        let wait_result = timeout(Duration::from_secs(request.timeout_seconds), child.wait()).await;
         let status = match wait_result {
             Ok(Ok(status)) => status,
             Ok(Err(_)) => {
@@ -320,10 +316,7 @@ impl CodexService {
         };
         active.cancelled.store(true, Ordering::SeqCst);
         terminate_process_tree(active.pid).await.map_err(|_| {
-            CommandError::new(
-                ErrorKind::ProcessFailed,
-                "No se pudo cancelar Codex CLI.",
-            )
+            CommandError::new(ErrorKind::ProcessFailed, "No se pudo cancelar Codex CLI.")
         })
     }
 
@@ -346,10 +339,15 @@ impl CodexService {
                 .then(|| spec.clone())
                 .ok_or_else(|| "Codex CLI no está instalado.".to_string());
         }
-        if let Some(value) = configured_path.map(str::trim).filter(|value| !value.is_empty()) {
+        if let Some(value) = configured_path
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
             let path = PathBuf::from(value);
             if !is_safe_codex_executable(&path) {
-                return Err("La ruta manual debe apuntar a un archivo codex.exe absoluto.".to_string());
+                return Err(
+                    "La ruta manual debe apuntar a un archivo codex.exe absoluto.".to_string(),
+                );
             }
             return Ok(ExecutableSpec {
                 program: path,
@@ -365,11 +363,7 @@ impl CodexService {
         Err("Codex CLI no está instalado o codex.exe no está disponible en PATH.".to_string())
     }
 
-    async fn run_probe(
-        &self,
-        spec: &ExecutableSpec,
-        args: &[&str],
-    ) -> Result<ProbeOutput, String> {
+    async fn run_probe(&self, spec: &ExecutableSpec, args: &[&str]) -> Result<ProbeOutput, String> {
         let mut command = self.command_for(spec);
         command
             .args(args)
@@ -381,9 +375,9 @@ impl CodexService {
         let mut child = command
             .spawn()
             .map_err(|_| "No se pudo iniciar Codex CLI durante la detección.".to_string())?;
-        let pid = child
-            .id()
-            .ok_or_else(|| "Codex CLI no devolvió un process id durante la detección.".to_string())?;
+        let pid = child.id().ok_or_else(|| {
+            "Codex CLI no devolvió un process id durante la detección.".to_string()
+        })?;
         let stdout = child
             .stdout
             .take()
@@ -405,11 +399,7 @@ impl CodexService {
         };
         let stdout = stdout_task.await.unwrap_or_default();
         let stderr = stderr_task.await.unwrap_or_default();
-        if stdout.overflowed
-            || stderr.overflowed
-            || stdout.invalid_utf8
-            || stderr.invalid_utf8
-        {
+        if stdout.overflowed || stderr.overflowed || stdout.invalid_utf8 || stderr.invalid_utf8 {
             return Err("Codex CLI devolvió una salida de detección inválida.".to_string());
         }
         Ok(ProbeOutput {
@@ -425,9 +415,7 @@ impl CodexService {
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
-            command
-                .as_std_mut()
-                .creation_flags(CREATE_NO_WINDOW);
+            command.as_std_mut().creation_flags(CREATE_NO_WINDOW);
         }
         command
     }
@@ -535,11 +523,43 @@ fn clear_sensitive_environment(command: &mut Command) {
 }
 
 fn find_codex_on_path() -> Option<PathBuf> {
-    std::env::var_os("PATH")
+    let directories = std::env::var_os("PATH")
         .into_iter()
-        .flat_map(|path| std::env::split_paths(&path).collect::<Vec<_>>())
-        .map(|directory| directory.join("codex.exe"))
-        .find(|candidate| candidate.is_file())
+        .flat_map(|path| std::env::split_paths(&path).collect::<Vec<_>>());
+    find_codex_in_directories(directories)
+}
+
+fn find_codex_in_directories<I>(directories: I) -> Option<PathBuf>
+where
+    I: IntoIterator<Item = PathBuf>,
+{
+    for directory in directories {
+        let direct_executable = directory.join("codex.exe");
+        if is_safe_codex_executable(&direct_executable) {
+            return Some(direct_executable);
+        }
+
+        // The official npm package adds codex.cmd to its global bin directory,
+        // while the native executable remains inside its Windows-only package.
+        // Derive only that exact package path; never execute or parse the wrapper.
+        if directory.join("codex.cmd").is_file() {
+            let npm_executable = directory
+                .join("node_modules")
+                .join("@openai")
+                .join("codex")
+                .join("node_modules")
+                .join("@openai")
+                .join("codex-win32-x64")
+                .join("vendor")
+                .join("x86_64-pc-windows-msvc")
+                .join("bin")
+                .join("codex.exe");
+            if is_safe_codex_executable(&npm_executable) {
+                return Some(npm_executable);
+            }
+        }
+    }
+    None
 }
 
 fn first_non_empty_line(value: &str) -> Option<String> {
@@ -573,10 +593,7 @@ fn classify_process_error(stderr: &str) -> CommandError {
             "Codex CLI reportó un rate limit. Intenta más tarde.",
         )
     } else {
-        CommandError::new(
-            ErrorKind::ProcessFailed,
-            "Codex CLI terminó con un error.",
-        )
+        CommandError::new(ErrorKind::ProcessFailed, "Codex CLI terminó con un error.")
     }
 }
 
@@ -592,9 +609,7 @@ async fn terminate_process_tree(pid: u32) -> Result<(), String> {
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     use std::os::windows::process::CommandExt;
-    command
-        .as_std_mut()
-        .creation_flags(CREATE_NO_WINDOW);
+    command.as_std_mut().creation_flags(CREATE_NO_WINDOW);
     command
         .status()
         .await
@@ -817,5 +832,63 @@ mod tests {
         std::fs::write(&other, b"fixture").expect("other");
         assert!(is_safe_codex_executable(&codex));
         assert!(!is_safe_codex_executable(&other));
+    }
+
+    #[test]
+    fn finds_direct_codex_executable_on_path() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let codex = temp.path().join("codex.exe");
+        std::fs::write(&codex, b"fixture").expect("codex");
+
+        assert_eq!(
+            find_codex_in_directories([temp.path().to_path_buf()]),
+            Some(codex)
+        );
+    }
+
+    #[test]
+    fn finds_native_executable_from_official_npm_layout() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let codex = temp
+            .path()
+            .join("node_modules")
+            .join("@openai")
+            .join("codex")
+            .join("node_modules")
+            .join("@openai")
+            .join("codex-win32-x64")
+            .join("vendor")
+            .join("x86_64-pc-windows-msvc")
+            .join("bin")
+            .join("codex.exe");
+        std::fs::create_dir_all(codex.parent().expect("parent")).expect("directories");
+        std::fs::write(temp.path().join("codex.cmd"), b"fixture").expect("wrapper");
+        std::fs::write(&codex, b"fixture").expect("codex");
+
+        assert_eq!(
+            find_codex_in_directories([temp.path().to_path_buf()]),
+            Some(codex)
+        );
+    }
+
+    #[test]
+    fn ignores_npm_native_executable_without_standard_wrapper() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let codex = temp
+            .path()
+            .join("node_modules")
+            .join("@openai")
+            .join("codex")
+            .join("node_modules")
+            .join("@openai")
+            .join("codex-win32-x64")
+            .join("vendor")
+            .join("x86_64-pc-windows-msvc")
+            .join("bin")
+            .join("codex.exe");
+        std::fs::create_dir_all(codex.parent().expect("parent")).expect("directories");
+        std::fs::write(&codex, b"fixture").expect("codex");
+
+        assert_eq!(find_codex_in_directories([temp.path().to_path_buf()]), None);
     }
 }

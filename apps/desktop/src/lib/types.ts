@@ -6,6 +6,8 @@ import type {
 
 export type { OneShotRequest, OneShotResult, ProviderStatus };
 
+export type MascotPalette = "teal" | "midnight" | "burgundy";
+
 export interface SavedPosition {
   x: number;
   y: number;
@@ -20,6 +22,7 @@ export interface AppPreferences {
   clickThrough: boolean;
   animationsEnabled: boolean;
   reduceMotion: boolean;
+  mascotPalette: MascotPalette;
   language: "es-MX" | "en-US";
   launchAtStartup: boolean;
   codexPath?: string;
@@ -48,6 +51,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   clickThrough: false,
   animationsEnabled: true,
   reduceMotion: false,
+  mascotPalette: "teal",
   language: "es-MX",
   launchAtStartup: false,
   timeoutSeconds: 120,

@@ -7,6 +7,7 @@ use crate::services::codex_process::CodexService;
 use crate::services::logging::{SafeEvent, SafeLogger};
 use crate::services::monitor_position::restore_mascot_position;
 use crate::services::preferences::PreferencesStore;
+use std::sync::atomic::AtomicBool;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager, WindowEvent};
@@ -15,6 +16,7 @@ pub struct AppState {
     pub codex: CodexService,
     pub preferences: PreferencesStore,
     pub logger: SafeLogger,
+    pub mascot_expanded: AtomicBool,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -40,6 +42,7 @@ pub fn run() {
             codex,
             preferences,
             logger,
+            mascot_expanded: AtomicBool::new(false),
         })
         .invoke_handler(tauri::generate_handler![
             commands::detect_codex,
@@ -51,6 +54,7 @@ pub fn run() {
             commands::open_quick_ask,
             commands::set_click_through,
             commands::set_always_on_top,
+            commands::set_mascot_expanded,
             commands::save_mascot_position,
             commands::reset_mascot_position,
             commands::quit_app,
@@ -63,6 +67,8 @@ pub fn run() {
                 window.set_always_on_top(preferences.always_on_top)?;
                 window.set_ignore_cursor_events(false)?;
             }
+            commands::set_mascot_expanded_internal(&app_handle, &state, false)
+                .map_err(|error| std::io::Error::other(error.message))?;
             let _ = restore_mascot_position(&app_handle, preferences.mascot_position.as_ref());
             build_tray(app)?;
 

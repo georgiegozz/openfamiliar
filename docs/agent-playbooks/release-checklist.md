@@ -14,8 +14,10 @@ Preparing, validating, or packaging a local Windows x64 MVP release.
 1. Confirm clean dependency install and run format, type, JS, Rust, and pack checks.
 2. Search tracked files for secrets, personal paths, diagnostic logs, obsolete
    stable-provider UI, generic shell IPC, and prompt/response logging.
-3. Build both MSI and NSIS without signing.
-4. Record installer paths, sizes, and SHA-256 hashes.
+3. Build both MSI and NSIS; keep them explicitly marked unsigned unless a
+   reviewed public-signing workflow is active.
+4. Run `pnpm release:verify` to record installer paths, sizes, SHA-256 hashes,
+   Authenticode status, publisher, and timestamp state.
 5. Install, run the complete Windows MVP smoke test, uninstall, and reinstall.
 6. Commit only reviewed source and docs; never commit `target`, `dist`, or installers.
 
@@ -26,6 +28,8 @@ Preparing, validating, or packaging a local Windows x64 MVP release.
 - All automated gates pass or have an explicit release-blocking limitation.
 - Smoke-test evidence covers click-through recovery, cancellation, monitor/DPI,
   missing Codex onboarding, and application quit.
+- A public binary release has valid timestamped Authenticode signatures, or is
+  clearly published as an unsigned pre-release with the expected warning.
 
 ## Validation
 
@@ -36,9 +40,12 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 pnpm --filter @openfamiliar/desktop tauri build
+pnpm release:verify
 ```
 
 ## Limits and Anti-patterns
 
 Do not sign, publish, upload, push, or call a build "clean-install tested" based
-only on compilation. See `docs/testing/WINDOWS_MVP_SMOKE_TEST.md`.
+only on compilation. Do not use a self-signed certificate for public downloads.
+See `docs/testing/WINDOWS_MVP_SMOKE_TEST.md` and
+`docs/guides/windows-code-signing.md`.

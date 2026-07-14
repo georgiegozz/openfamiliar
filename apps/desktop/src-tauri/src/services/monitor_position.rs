@@ -19,7 +19,9 @@ pub fn restore_mascot_position(
         .get_webview_window("mascot")
         .ok_or_else(|| "mascot window is unavailable".to_string())?;
     let size = window.outer_size().map_err(|error| error.to_string())?;
-    let monitors = app.available_monitors().map_err(|error| error.to_string())?;
+    let monitors = app
+        .available_monitors()
+        .map_err(|error| error.to_string())?;
     let areas: Vec<(Option<String>, WorkArea)> = monitors
         .iter()
         .map(|monitor| {
@@ -116,7 +118,10 @@ pub fn clamp_to_area(
         .y
         .saturating_add(area.height as i32)
         .saturating_sub(window_height as i32);
-    (x.clamp(area.x, max_x.max(area.x)), y.clamp(area.y, max_y.max(area.y)))
+    (
+        x.clamp(area.x, max_x.max(area.x)),
+        y.clamp(area.y, max_y.max(area.y)),
+    )
 }
 
 fn point_is_in_area(x: i32, y: i32, area: WorkArea) -> bool {

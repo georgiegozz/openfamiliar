@@ -1,41 +1,42 @@
 # Third-Party Notices
 
-This file lists third-party components that may be redistributed with OpenFamiliar
-builds. Entries are added as dependencies are pinned and audited.
+This file records redistributed dependencies and conceptual references. It is
+not a replacement for the licenses shipped with each dependency.
 
 ## Policy
 
-- Core code: Apache-2.0 only (or compatible, after review).
-- GPL / AGPL: blocked for the core by default.
-- Unlicensed or All Rights Reserved: do not copy.
-- Assets with “personal use only” or “non-commercial” terms: do not distribute.
+- Core code: Apache-2.0 or a reviewed compatible license.
+- GPL/AGPL-only dependencies are blocked for the core by default.
+- Unlicensed, all-rights-reserved, personal-use-only, or non-commercial assets
+  are not copied or redistributed.
 
-## Conceptual references (no code copied)
+## Conceptual references — no code or art copied
 
-| Project            | License noted                             | Use in OpenFamiliar                             |
-| ------------------ | ----------------------------------------- | ----------------------------------------------- |
-| OpenPets           | MIT                                       | Architecture study only                         |
-| CoPet              | MIT                                       | Architecture study only (Tauri/React pet shell) |
-| DeskPet            | MIT (some assets excluded)                | Security/provider ideas only                    |
-| Clawd on Desk      | AGPL-3.0 + reserved assets                | Conceptual reference only — no code/assets      |
-| OpenCode Companion | License unclear                           | Conceptual reference only — no code/assets      |
-| Open-LLM-VTuber    | MIT core + separate Live2D model licenses | Demonstrates code/art license split             |
+| Project       | Observed license boundary                | Use in OpenFamiliar                              |
+| ------------- | ---------------------------------------- | ------------------------------------------------ |
+| BongoCat      | MIT repository                           | Tauri desktop-pet and custom-model UX reference  |
+| Petdex        | MIT repository                           | Manifest and spritesheet pack concept reference  |
+| Clawd on Desk | AGPL-3.0 code; mixed/reserved art notice | Reference only; no source or assets incorporated |
 
-## Runtime dependencies
+OpenFamiliar uses its own manifest, runtime, UI, and original Perrito Tech art.
 
-Populate this section when `cargo tree`, `pnpm licenses`, and SBOM generation
-are run for a release candidate. Until then, treat lockfiles as source of truth.
+## Runtime dependency inventory
 
-### Rust (Cargo)
+`docs/legal/dependency-licenses.json` is generated deterministically from the
+current lockfiles with:
 
-- To be filled from `Cargo.lock` on first release candidate.
+```powershell
+pnpm licenses:audit
+```
 
-### JavaScript / TypeScript (pnpm)
-
-- To be filled from `pnpm-lock.yaml` on first release candidate.
+The current production JavaScript inventory contains MIT-licensed packages.
+The Rust inventory contains SPDX expressions reported by Cargo metadata; no
+`NOASSERTION`, GPL-only, or AGPL-only entry was found in this lockfile audit.
+Some expressions offer multiple alternatives and must be reviewed under the
+license selected by the distributed package. `Cargo.lock` and
+`pnpm-lock.yaml` remain the dependency-version sources of truth.
 
 ## Trademarks
 
-Provider names (OpenAI, Gemini, xAI, Ollama, Codex CLI, Gemini CLI) may appear
-as plain text for interoperability. Logos and brand marks are not part of the
-OpenFamiliar identity pack.
+Provider names may appear as plain text for interoperability. Their logos and
+brand marks are not part of the OpenFamiliar identity pack.

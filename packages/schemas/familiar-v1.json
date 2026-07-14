@@ -47,6 +47,10 @@
       },
       "additionalProperties": false
     },
+    "variants": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
     "animations": {
       "type": "object",
       "additionalProperties": {

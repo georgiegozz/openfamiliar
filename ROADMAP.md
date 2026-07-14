@@ -10,18 +10,20 @@ Status vocabulary is evidence-based:
 
 ## Stable Windows v0.1
 
-| Capability                                     | Status                          | Release evidence                                    |
-| ---------------------------------------------- | ------------------------------- | --------------------------------------------------- |
-| Two-window Tauri desktop shell                 | implemented                     | Production build + human smoke pending/final result |
-| Perrito Tech spritesheet and animation runtime | implemented, tested locally     | Runtime unit tests + visual smoke                   |
-| One-shot Quick Ask state machine               | implemented, tested locally     | Reducer and desktop tests                           |
-| Restricted Codex CLI adapter                   | implemented, tested locally     | Fake CLI integration tests only                     |
-| Timeout/cancel/process-tree termination        | implemented, tested locally     | Fake slow/child scenarios                           |
-| Tray, click-through recovery, preferences      | implemented                     | Human Windows interaction smoke required            |
-| Monitor/DPI-safe restore                       | implemented, tested locally     | Rust unit tests + multi-monitor human smoke         |
-| MSI and NSIS packaging                         | implemented                     | Local installer build result recorded per release   |
-| Clean Windows install/reinstall                | deferred to operator validation | Human checklist                                     |
-| Code signing                                   | deferred                        | Requires publisher identity and certificate         |
+| Capability                                | Status                          | Release evidence                                    |
+| ----------------------------------------- | ------------------------------- | --------------------------------------------------- |
+| Two-window Tauri desktop shell            | implemented                     | Production build + human smoke pending/final result |
+| Original Perrito Tech 64 px spritesheet   | implemented, tested locally     | Pack/asset checks + visual smoke                    |
+| Static idle and event-only animation      | implemented, tested locally     | 60-second runtime unit test + visual smoke          |
+| Teal/midnight/burgundy prop accents       | implemented, tested locally     | Deterministic asset generator/check                 |
+| One-shot Quick Ask state machine          | implemented, tested locally     | Reducer and desktop tests                           |
+| Restricted Codex CLI adapter              | implemented, tested locally     | Fake CLI tests + operator real-query smoke          |
+| Timeout/cancel/process-tree termination   | implemented, tested locally     | Fake slow/child scenarios                           |
+| Tray, click-through recovery, preferences | implemented                     | Human Windows interaction smoke required            |
+| Monitor/DPI-safe restore                  | implemented, tested locally     | Rust unit tests + multi-monitor human smoke         |
+| MSI and NSIS packaging                    | implemented                     | Local installer build result recorded per release   |
+| Clean Windows install/reinstall           | deferred to operator validation | Human checklist                                     |
+| Code signing                              | release gate documented         | Public certificate/Store path still to be selected  |
 
 ## Retained Experiments
 

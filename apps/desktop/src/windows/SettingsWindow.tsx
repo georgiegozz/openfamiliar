@@ -198,14 +198,34 @@ export function SettingsWindow() {
                   update("scale", Number(event.target.value) as 1 | 2 | 3)
                 }
               >
-                <option value="1">1× (96 px)</option>
-                <option value="2">2× (192 px)</option>
-                <option value="3">3× (288 px)</option>
+                <option value="1">1× (64 px)</option>
+                <option value="2">2× (128 px, recomendado)</option>
+                <option value="3">3× (192 px)</option>
               </select>
+            </label>
+            <label className="settings-field">
+              <span>Color de acentos</span>
+              <select
+                value={preferences.mascotPalette}
+                onChange={(event) =>
+                  update(
+                    "mascotPalette",
+                    event.target.value as AppPreferences["mascotPalette"],
+                  )
+                }
+              >
+                <option value="teal">Teal</option>
+                <option value="midnight">Azul medianoche</option>
+                <option value="burgundy">Borgoña</option>
+              </select>
+              <small>
+                Cambia sólo pequeños props de estado; el perro permanece natural
+                y sin collar.
+              </small>
             </label>
             <Toggle
               label="Animaciones"
-              description="Reproduce el spritesheet a un máximo de 12 FPS."
+              description="Anima sólo eventos activos; el idle permanece inmóvil."
               checked={preferences.animationsEnabled}
               onChange={(value) => update("animationsEnabled", value)}
             />

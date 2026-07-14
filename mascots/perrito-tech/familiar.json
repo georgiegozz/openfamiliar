@@ -2,7 +2,7 @@
   "$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
   "id": "perrito-tech",
   "name": "Perrito Tech",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "engine": ">=0.1.0",
   "author": "georgiegozz",
   "license": "CC-BY-4.0",
@@ -23,30 +23,32 @@
   },
   "spriteSheet": {
     "asset": "assets/perrito-tech-spritesheet.png",
-    "frameWidth": 96,
-    "frameHeight": 96,
+    "frameWidth": 64,
+    "frameHeight": 64,
     "columns": 4,
     "rows": 4
   },
+  "variants": {
+    "teal": "assets/perrito-tech-spritesheet.png",
+    "midnight": "assets/variants/perrito-tech-midnight.png",
+    "burgundy": "assets/variants/perrito-tech-burgundy.png"
+  },
   "animations": {
-    "idle": { "frames": [0, 1], "fps": 6, "loop": true },
-    "breathe": { "frames": [0, 1, 0], "fps": 6, "loop": false },
-    "blink": { "frames": [0, 2, 0], "fps": 8, "loop": false },
-    "look-left": { "frames": [0, 3, 3, 0], "fps": 6, "loop": false },
-    "look-right": { "frames": [0, 4, 4, 0], "fps": 6, "loop": false },
-    "thinking": { "frames": [5, 0, 5], "fps": 6, "loop": true },
-    "answering": { "frames": [6, 1, 6], "fps": 8, "loop": true },
-    "success": { "frames": [7, 15, 7], "fps": 8, "loop": false },
-    "error": { "frames": [8, 8, 0], "fps": 6, "loop": false },
-    "sleeping": { "frames": [9], "fps": 2, "loop": true },
-    "wake": { "frames": [10, 0], "fps": 8, "loop": false },
-    "dragging": { "frames": [11], "fps": 8, "loop": true },
-    "listening": { "frames": [12, 0], "fps": 6, "loop": true },
-    "ear-twitch": { "frames": [13, 0], "fps": 8, "loop": false },
-    "special-idle": { "frames": [14, 0], "fps": 6, "loop": false }
+    "idle": { "frames": [0], "fps": 1, "loop": true },
+    "listening": { "frames": [1], "fps": 1, "loop": true },
+    "thinking": { "frames": [2, 9], "fps": 2, "loop": true },
+    "working": { "frames": [9], "fps": 1, "loop": true },
+    "answering": { "frames": [15], "fps": 1, "loop": true },
+    "approval": { "frames": [3], "fps": 1, "loop": true },
+    "success": { "frames": [10, 0], "fps": 3, "loop": false },
+    "error": { "frames": [5, 0], "fps": 2, "loop": false },
+    "sleeping": { "frames": [6], "fps": 1, "loop": true },
+    "wake": { "frames": [7, 0], "fps": 3, "loop": false },
+    "dragging": { "frames": [8], "fps": 1, "loop": true }
   },
   "assetSources": [
-    "Original OpenFamiliar character and pixel-art spritesheet, created with an AI-assisted image workflow and manually processed for transparent nearest-neighbor rendering."
+    "Original OpenFamiliar character redesigned from operator-provided dog references with an AI-assisted image workflow; normalized locally to a transparent 4x4 nearest-neighbor spritesheet.",
+    "Accent variants are deterministic derivatives that recolor small state props only; the collar-free dog, coat, markings, eyes, and alpha remain unchanged."
   ],
   "aiGenerated": true
 }

@@ -4,27 +4,37 @@ import {
 } from "@openfamiliar/mascot-runtime";
 import { useEffect } from "react";
 import spriteSheetUrl from "../../../../../mascots/perrito-tech/assets/perrito-tech-spritesheet.png?url";
+import burgundySpriteSheetUrl from "../../../../../mascots/perrito-tech/assets/variants/perrito-tech-burgundy.png?url";
+import midnightSpriteSheetUrl from "../../../../../mascots/perrito-tech/assets/variants/perrito-tech-midnight.png?url";
+import type { MascotPalette } from "../../lib/types";
 import { useMascotRuntime } from "./useMascotRuntime";
+
+export const MASCOT_FRAME_SIZE = 64;
 
 interface MascotSpriteProps {
   state: MascotVisualState;
   scale: 1 | 2 | 3;
+  palette: MascotPalette;
   animationsEnabled: boolean;
   reduceMotion: boolean;
-  onActivity?: () => void;
 }
 
 export function MascotSprite({
   state,
   scale,
+  palette,
   animationsEnabled,
   reduceMotion,
-  onActivity,
 }: MascotSpriteProps) {
+  const selectedSheet = {
+    teal: spriteSheetUrl,
+    midnight: midnightSpriteSheetUrl,
+    burgundy: burgundySpriteSheetUrl,
+  }[palette];
   useEffect(() => {
-    void preloadSpriteSheet(spriteSheetUrl).catch(() => undefined);
-  }, []);
-  const { snapshot, markActivity } = useMascotRuntime(state, {
+    void preloadSpriteSheet(selectedSheet).catch(() => undefined);
+  }, [selectedSheet]);
+  const snapshot = useMascotRuntime(state, {
     enabled: animationsEnabled,
     reduceMotion,
   });
@@ -35,10 +45,9 @@ export function MascotSprite({
     <div
       className="mascot-sprite-viewport"
       data-animation={snapshot.animation}
-      style={{ width: 96 * scale, height: 96 * scale }}
-      onPointerEnter={() => {
-        markActivity();
-        onActivity?.();
+      style={{
+        width: MASCOT_FRAME_SIZE * scale,
+        height: MASCOT_FRAME_SIZE * scale,
       }}
       aria-label={`Perrito Tech: ${state}`}
       role="img"
@@ -46,8 +55,8 @@ export function MascotSprite({
       <div
         className="mascot-sprite-frame"
         style={{
-          backgroundImage: `url(${spriteSheetUrl})`,
-          backgroundPosition: `${-column * 96}px ${-row * 96}px`,
+          backgroundImage: `url(${selectedSheet})`,
+          backgroundPosition: `${-column * MASCOT_FRAME_SIZE}px ${-row * MASCOT_FRAME_SIZE}px`,
           transform: `scale(${scale})`,
         }}
       />

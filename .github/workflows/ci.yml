@@ -18,7 +18,13 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
       - run: pnpm install --frozen-lockfile
+      - run: python -m venv .venv
+      - run: .venv\Scripts\python.exe -m pip install -r scripts/assets/requirements.txt
       - run: pnpm ci:js
 
   rust:

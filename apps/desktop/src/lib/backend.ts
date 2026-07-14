@@ -4,7 +4,6 @@ import type {
   OneShotRequest,
   OneShotResult,
   ProviderStatus,
-  SavedPosition,
 } from "./types";
 import { DEFAULT_PREFERENCES } from "./types";
 
@@ -40,8 +39,10 @@ export const backend = {
     invokeBackend<AppPreferences>("set_click_through", { enabled }),
   setAlwaysOnTop: (enabled: boolean) =>
     invokeBackend<AppPreferences>("set_always_on_top", { enabled }),
-  saveMascotPosition: (position: SavedPosition) =>
-    invokeBackend<AppPreferences>("save_mascot_position", { position }),
+  saveMascotPosition: () =>
+    invokeBackend<AppPreferences>("save_mascot_position"),
+  setMascotExpanded: (expanded: boolean) =>
+    invokeBackend<void>("set_mascot_expanded", { expanded }),
   resetMascotPosition: () =>
     invokeBackend<AppPreferences>("reset_mascot_position"),
   quit: () => invokeBackend<void>("quit_app"),
@@ -70,6 +71,7 @@ async function mockInvoke<T>(
     case "open_settings":
     case "open_quick_ask":
     case "cancel_codex":
+    case "set_mascot_expanded":
     case "quit_app":
       return undefined as T;
     case "set_click_through":
