@@ -2,20 +2,51 @@
   "$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
   "id": "perrito-tech",
   "name": "Perrito Tech",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engine": ">=0.1.0",
   "author": "georgiegozz",
   "license": "CC-BY-4.0",
   "homepage": "https://github.com/georgiegozz/openfamiliar",
   "personality": "personality.md",
   "states": {
-    "idle": "assets/idle.webp",
-    "thinking": "assets/thinking.webp",
-    "working": "assets/working.webp",
-    "approval": "assets/approval.webp",
-    "success": "assets/success.webp",
-    "error": "assets/error.webp"
+    "idle": "assets/perrito-tech-spritesheet.png",
+    "listening": "assets/perrito-tech-spritesheet.png",
+    "thinking": "assets/perrito-tech-spritesheet.png",
+    "working": "assets/perrito-tech-spritesheet.png",
+    "answering": "assets/perrito-tech-spritesheet.png",
+    "approval": "assets/perrito-tech-spritesheet.png",
+    "success": "assets/perrito-tech-spritesheet.png",
+    "error": "assets/perrito-tech-spritesheet.png",
+    "sleeping": "assets/perrito-tech-spritesheet.png",
+    "wake": "assets/perrito-tech-spritesheet.png",
+    "dragging": "assets/perrito-tech-spritesheet.png"
   },
-  "assetSources": ["original placeholder markers; final art pending"],
-  "aiGenerated": false
+  "spriteSheet": {
+    "asset": "assets/perrito-tech-spritesheet.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "columns": 4,
+    "rows": 4
+  },
+  "animations": {
+    "idle": { "frames": [0, 1], "fps": 6, "loop": true },
+    "breathe": { "frames": [0, 1, 0], "fps": 6, "loop": false },
+    "blink": { "frames": [0, 2, 0], "fps": 8, "loop": false },
+    "look-left": { "frames": [0, 3, 3, 0], "fps": 6, "loop": false },
+    "look-right": { "frames": [0, 4, 4, 0], "fps": 6, "loop": false },
+    "thinking": { "frames": [5, 0, 5], "fps": 6, "loop": true },
+    "answering": { "frames": [6, 1, 6], "fps": 8, "loop": true },
+    "success": { "frames": [7, 15, 7], "fps": 8, "loop": false },
+    "error": { "frames": [8, 8, 0], "fps": 6, "loop": false },
+    "sleeping": { "frames": [9], "fps": 2, "loop": true },
+    "wake": { "frames": [10, 0], "fps": 8, "loop": false },
+    "dragging": { "frames": [11], "fps": 8, "loop": true },
+    "listening": { "frames": [12, 0], "fps": 6, "loop": true },
+    "ear-twitch": { "frames": [13, 0], "fps": 8, "loop": false },
+    "special-idle": { "frames": [14, 0], "fps": 6, "loop": false }
+  },
+  "assetSources": [
+    "Original OpenFamiliar character and pixel-art spritesheet, created with an AI-assisted image workflow and manually processed for transparent nearest-neighbor rendering."
+  ],
+  "aiGenerated": true
 }

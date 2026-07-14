@@ -3,7 +3,16 @@
   "$id": "https://openfamiliar.dev/schema/familiar-v1.json",
   "title": "Familiar Pack Manifest v1",
   "type": "object",
-  "required": ["id", "name", "version", "engine", "author", "license", "personality", "states"],
+  "required": [
+    "id",
+    "name",
+    "version",
+    "engine",
+    "author",
+    "license",
+    "personality",
+    "states"
+  ],
   "properties": {
     "$schema": { "type": "string" },
     "id": { "type": "string", "minLength": 1 },
@@ -16,8 +25,47 @@
     "personality": { "type": "string" },
     "states": {
       "type": "object",
-      "required": ["idle", "thinking", "working", "approval", "success", "error"],
+      "required": [
+        "idle",
+        "thinking",
+        "working",
+        "approval",
+        "success",
+        "error"
+      ],
       "additionalProperties": { "type": "string" }
+    },
+    "spriteSheet": {
+      "type": "object",
+      "required": ["asset", "frameWidth", "frameHeight", "columns", "rows"],
+      "properties": {
+        "asset": { "type": "string", "minLength": 1 },
+        "frameWidth": { "type": "integer", "minimum": 1 },
+        "frameHeight": { "type": "integer", "minimum": 1 },
+        "columns": { "type": "integer", "minimum": 1 },
+        "rows": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "animations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["frames", "fps", "loop"],
+        "properties": {
+          "frames": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "integer", "minimum": 0 }
+          },
+          "fps": { "type": "number", "exclusiveMinimum": 0, "maximum": 12 },
+          "loop": { "type": "boolean" },
+          "interruptible": { "type": "boolean" },
+          "priority": { "type": "integer", "minimum": 0 },
+          "fallback": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
     },
     "assetSources": { "type": "array", "items": { "type": "string" } },
     "aiGenerated": { "type": "boolean" }
