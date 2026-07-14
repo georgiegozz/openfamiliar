@@ -1,1 +1,1 @@
-console.log('adapter-openai-compatible:build');
+console.log("adapter-openai-compatible:build");

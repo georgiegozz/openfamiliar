@@ -1,1 +1,1 @@
-console.log('adapter-ollama:build');
+console.log("adapter-ollama:build");

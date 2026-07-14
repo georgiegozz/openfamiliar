@@ -8,11 +8,11 @@
 
 ## Channels
 
-| Need | Channel |
-|------|---------|
-| Bugs / features | GitHub Issues (once public) |
-| Security | SECURITY.md private process |
-| Discussions | GitHub Discussions (once public) |
+| Need            | Channel                          |
+| --------------- | -------------------------------- |
+| Bugs / features | GitHub Issues (once public)      |
+| Security        | SECURITY.md private process      |
+| Discussions     | GitHub Discussions (once public) |
 
 Private beta: contact the repository owner directly.
 

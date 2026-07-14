@@ -87,5 +87,4 @@ __pycache__/
 .venv/
 venv/
 
-# Keep plan source for operators who choose to track it
-# plan.txt is tracked intentionally as product planning input
+# Historical product planning is tracked under docs/planning/.

@@ -2,40 +2,35 @@
 
 ## Supported versions
 
-| Version | Supported |
-|---------|-----------|
+| Version       | Supported                                         |
+| ------------- | ------------------------------------------------- |
 | 0.x (pre-1.0) | Best-effort on latest `main` / latest pre-release |
 
 ## Reporting a vulnerability
 
-Do **not** open a public issue for security vulnerabilities.
+Do **not** open a public issue for security vulnerabilities. Prefer GitHub
+Security Advisories when private reporting is enabled; otherwise contact the
+repository owner privately.
 
-Email or private channel (to be configured before public launch):
+Please include the impact, reproduction steps, affected component, and whether
+credentials, prompt content, or local data could be exposed. Reports should be
+acknowledged within seven days.
 
-- Prefer GitHub Security Advisories once the repository is public.
-- Until then, contact the repository owner privately.
+## Stable MVP security boundary
 
-Please include:
+- The Windows desktop has no OpenFamiliar cloud backend or telemetry.
+- A Quick Ask starts one fresh Codex CLI process only after an explicit question.
+- The process is read-only and ephemeral, with input/output limits, timeout,
+  cancellation, and process-tree cleanup.
+- OpenFamiliar does not read Codex authentication files, browser sessions,
+  cookies, API keys, `.env` files, or workspace content.
+- Questions, answers, stdout, and stderr are not written to application logs.
+- Logs contain event categories only; preferences contain non-secret UI settings.
+- Stable Tauri IPC does not expose a generic shell, arbitrary command,
+  user-controlled CLI arguments, provider selection, workspace access, or agents.
+- Familiar packs are declarative assets; pack validation rejects missing or
+  invalid paths and no pack may contain executable code.
 
-- Description and impact
-- Reproduction steps
-- Affected component (core, pack reader, MCP, desktop, CLI, extension)
-- Whether credentials or workspace data could leak
-
-We aim to acknowledge reports within 7 days.
-
-## Security principles
-
-- Local-first: no mandatory remote OpenFamiliar backend.
-- Explicit workspace authorization.
-- Context must be previewable before send.
-- No scraping of web sessions or cookies for providers.
-- API keys only via official developer credentials + OS secret store.
-- Chat / Read-only / Agent modes with least privilege.
-- All mutable ops require Permission Broker approval + local audit log.
-- Packs: no executable JS/binaries in v1; path/MIME/size validation.
-- Telemetry off by default.
-
-## Hardening checklist (release)
-
-See `docs/security/threat-model.md` and Phase 10 hardening tasks.
+Experimental crates and future designs are not part of this stable boundary.
+See `docs/security/threat-model.md` and
+`docs/agent-playbooks/security-boundaries.md`.

@@ -12,13 +12,26 @@ test("valid minimal manifest", () => {
     license: "CC0-1.0",
     personality: "personality.md",
     states: {
-      idle: "a", thinking: "b", working: "c", approval: "d", success: "e", error: "f",
+      idle: "a",
+      thinking: "b",
+      working: "c",
+      approval: "d",
+      success: "e",
+      error: "f",
     },
   });
   assert.equal(r.ok, true);
 });
 
 test("rejects missing license", () => {
-  const r = validateManifestShape({ id: "x", name: "X", version: "0.1.0", engine: ">=0.1.0", author: "a", personality: "p", states: {} });
+  const r = validateManifestShape({
+    id: "x",
+    name: "X",
+    version: "0.1.0",
+    engine: ">=0.1.0",
+    author: "a",
+    personality: "p",
+    states: {},
+  });
   assert.equal(r.ok, false);
 });

@@ -1,0 +1,5 @@
+interface:
+  display_name: "OpenFamiliar Codex Adapter"
+  short_description: "Harden one-shot Codex CLI execution"
+  brand_color: "#43D7B0"
+  default_prompt: "Use $openfamiliar-codex-adapter to review the ephemeral Codex CLI boundary."

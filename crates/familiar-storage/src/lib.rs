@@ -3,11 +3,11 @@
 use chrono::{DateTime, Utc};
 use directories::ProjectDirs;
 use rusqlite::{params, Connection};
-use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -82,14 +82,18 @@ impl Database {
             fs::create_dir_all(parent)?;
         }
         let conn = Connection::open(path)?;
-        let db = Self { conn: Mutex::new(conn) };
+        let db = Self {
+            conn: Mutex::new(conn),
+        };
         db.migrate()?;
         Ok(db)
     }
 
     pub fn open_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;
-        let db = Self { conn: Mutex::new(conn) };
+        let db = Self {
+            conn: Mutex::new(conn),
+        };
         db.migrate()?;
         Ok(db)
     }
@@ -127,16 +131,22 @@ impl Database {
             );
             "#,
         )?;
-        let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM schema_version", [], |r| r.get(0))?;
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM schema_version", [], |r| r.get(0))?;
         if count == 0 {
-            conn
-                .execute("INSERT INTO schema_version(version) VALUES (?1)", params![1i64])?;
+            conn.execute(
+                "INSERT INTO schema_version(version) VALUES (?1)",
+                params![1i64],
+            )?;
         }
         Ok(())
     }
 
-    pub fn create_session(&self, title: &str, provider_id: &str, model: &str) -> Result<SessionRecord> {
+    pub fn create_session(
+        &self,
+        title: &str,
+        provider_id: &str,
+        model: &str,
+    ) -> Result<SessionRecord> {
         let now = Utc::now();
         let rec = SessionRecord {
             id: Uuid::new_v4().to_string(),
@@ -161,7 +171,12 @@ impl Database {
         Ok(rec)
     }
 
-    pub fn append_message(&self, session_id: &str, role: &str, content: &str) -> Result<ChatMessage> {
+    pub fn append_message(
+        &self,
+        session_id: &str,
+        role: &str,
+        content: &str,
+    ) -> Result<ChatMessage> {
         let msg = ChatMessage {
             id: Uuid::new_v4().to_string(),
             role: role.to_string(),
@@ -209,7 +224,14 @@ impl Database {
         Ok(out)
     }
 
-    pub fn save_window_state(&self, monitor_id: &str, x: f64, y: f64, scale: f64, mascot_size: f64) -> Result<()> {
+    pub fn save_window_state(
+        &self,
+        monitor_id: &str,
+        x: f64,
+        y: f64,
+        scale: f64,
+        mascot_size: f64,
+    ) -> Result<()> {
         let conn = self.conn.lock().expect("db lock");
         conn.execute(
             "INSERT INTO window_state(monitor_id, x, y, scale, mascot_size) VALUES (?1,?2,?3,?4,?5)
@@ -221,9 +243,8 @@ impl Database {
 
     pub fn load_window_state(&self, monitor_id: &str) -> Result<Option<(f64, f64, f64, f64)>> {
         let conn = self.conn.lock().expect("db lock");
-        let mut stmt = conn.prepare(
-            "SELECT x, y, scale, mascot_size FROM window_state WHERE monitor_id = ?1",
-        )?;
+        let mut stmt = conn
+            .prepare("SELECT x, y, scale, mascot_size FROM window_state WHERE monitor_id = ?1")?;
         let mut rows = stmt.query(params![monitor_id])?;
         if let Some(row) = rows.next()? {
             Ok(Some((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)))
@@ -257,7 +278,10 @@ impl AuditLog {
         if let Some(parent) = self.path.parent() {
             fs::create_dir_all(parent)?;
         }
-        let mut file = OpenOptions::new().create(true).append(true).open(&self.path)?;
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)?;
         let line = serde_json::to_string(event)?;
         writeln!(file, "{line}")?;
         Ok(())
@@ -306,7 +330,10 @@ impl CredentialStore {
 /// Redact common secret patterns for logs.
 pub fn redact_secrets(input: &str) -> String {
     let patterns = [
-        (r"(?i)(api[_-]?key|token|password|authorization)\s*[:=]\s*\S+", "$1=[REDACTED]"),
+        (
+            r"(?i)(api[_-]?key|token|password|authorization)\s*[:=]\s*\S+",
+            "$1=[REDACTED]",
+        ),
         (r"sk-[A-Za-z0-9]{10,}", "sk-[REDACTED]"),
         (r"AIza[0-9A-Za-z\-_]{10,}", "AIza[REDACTED]"),
     ];
@@ -336,7 +363,8 @@ mod tests {
     #[test]
     fn window_state_roundtrip() {
         let db = Database::open_in_memory().unwrap();
-        db.save_window_state("primary", 10.0, 20.0, 1.25, 128.0).unwrap();
+        db.save_window_state("primary", 10.0, 20.0, 1.25, 128.0)
+            .unwrap();
         let st = db.load_window_state("primary").unwrap().unwrap();
         assert_eq!(st.0, 10.0);
         assert_eq!(st.3, 128.0);
@@ -368,8 +396,10 @@ mod tests {
     #[test]
     fn window_state_upsert() {
         let db = Database::open_in_memory().unwrap();
-        db.save_window_state("primary", 10.0, 20.0, 1.0, 64.0).unwrap();
-        db.save_window_state("primary", 100.0, 200.0, 2.0, 128.0).unwrap();
+        db.save_window_state("primary", 10.0, 20.0, 1.0, 64.0)
+            .unwrap();
+        db.save_window_state("primary", 100.0, 200.0, 2.0, 128.0)
+            .unwrap();
         let st = db.load_window_state("primary").unwrap().unwrap();
         assert_eq!(st.0, 100.0);
         assert_eq!(st.1, 200.0);

@@ -1,1 +1,1 @@
-console.log('adapter-gemini-cli:build');
+console.log("adapter-gemini-cli:build");

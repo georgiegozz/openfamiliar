@@ -63,13 +63,31 @@ impl MascotState {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum CoreEvent {
-    StateChanged { state: MascotState },
-    Speech { text: String },
-    Notification { message: String },
-    ApprovalQueued { id: String, title: String, detail: String },
-    ChatDelta { session_id: String, delta: String },
-    ChatDone { session_id: String },
-    ChatError { session_id: String, error: String },
+    StateChanged {
+        state: MascotState,
+    },
+    Speech {
+        text: String,
+    },
+    Notification {
+        message: String,
+    },
+    ApprovalQueued {
+        id: String,
+        title: String,
+        detail: String,
+    },
+    ChatDelta {
+        session_id: String,
+        delta: String,
+    },
+    ChatDone {
+        session_id: String,
+    },
+    ChatError {
+        session_id: String,
+        error: String,
+    },
 }
 
 #[derive(Debug, Error)]
@@ -263,7 +281,9 @@ impl FamiliarCore {
         self.set_state(MascotState::Thinking);
         let session = self.db.create_session("chat", provider_id, model)?;
         if let Some(last_user) = messages.iter().rev().find(|m| m.role == "user") {
-            let _ = self.db.append_message(&session.id, "user", &last_user.content);
+            let _ = self
+                .db
+                .append_message(&session.id, "user", &last_user.content);
         }
         let req = ChatRequest {
             model: model.to_string(),
@@ -340,7 +360,11 @@ mod tests {
             ("", None),
         ];
         for (input, expected) in cases {
-            assert_eq!(MascotState::parse(input), expected, "failed for input: {input}");
+            assert_eq!(
+                MascotState::parse(input),
+                expected,
+                "failed for input: {input}"
+            );
         }
     }
 
@@ -359,7 +383,8 @@ mod tests {
         ];
         for state in states {
             let s = state.as_str();
-            let parsed = MascotState::parse(s).expect(&format!("roundtrip failed for {s}"));
+            let parsed =
+                MascotState::parse(s).unwrap_or_else(|| panic!("roundtrip failed for {s}"));
             assert_eq!(parsed, state);
         }
     }

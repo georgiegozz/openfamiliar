@@ -13,7 +13,9 @@ use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
 
 const MAX_PACK_BYTES: u64 = 50 * 1024 * 1024;
-const ALLOWED_EXTS: &[&str] = &["webp", "png", "jpg", "jpeg", "gif", "md", "json", "txt", "wav", "ogg", "mp3"];
+const ALLOWED_EXTS: &[&str] = &[
+    "webp", "png", "jpg", "jpeg", "gif", "md", "json", "txt", "wav", "ogg", "mp3",
+];
 
 #[derive(Parser, Debug)]
 #[command(name = "familiar", version, about = "OpenFamiliar pack CLI")]
@@ -54,6 +56,7 @@ enum PackCommands {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct FamiliarManifest {
     #[serde(rename = "$schema", default)]
     schema: Option<String>,
@@ -67,6 +70,8 @@ struct FamiliarManifest {
     homepage: Option<String>,
     personality: String,
     states: std::collections::BTreeMap<String, String>,
+    #[serde(default)]
+    variants: std::collections::BTreeMap<String, String>,
     #[serde(default)]
     asset_sources: Vec<String>,
     #[serde(default)]
@@ -130,6 +135,7 @@ struct ValidationReport {
     version: String,
     license: String,
     states: Vec<String>,
+    variants: Vec<String>,
     file_hashes: Vec<(String, String)>,
     warnings: Vec<String>,
     errors: Vec<String>,
@@ -162,6 +168,7 @@ fn pack_init(name: &str, path: &Path) -> Result<()> {
             "success": "assets/success.webp",
             "error": "assets/error.webp"
         },
+        "variants": {},
         "assetSources": [],
         "aiGenerated": false
     });
@@ -178,7 +185,9 @@ fn pack_init(name: &str, path: &Path) -> Result<()> {
         "CC0-1.0 — dedicate this pack's assets to the public domain as appropriate.\n",
     )?;
     // placeholder SVG-like note files so validation can warn about missing webp
-    for state in ["idle", "thinking", "working", "approval", "success", "error"] {
+    for state in [
+        "idle", "thinking", "working", "approval", "success", "error",
+    ] {
         fs::write(
             dir.join("assets").join(format!("{state}.webp.txt")),
             format!("Replace with real {state}.webp asset\n"),
@@ -211,10 +220,15 @@ fn validate_pack(path: &Path) -> Result<ValidationReport> {
 
     let personality = path.join(&manifest.personality);
     if !personality.exists() {
-        errors.push(format!("personality file missing: {}", manifest.personality));
+        errors.push(format!(
+            "personality file missing: {}",
+            manifest.personality
+        ));
     }
 
-    let required_states = ["idle", "thinking", "working", "approval", "success", "error"];
+    let required_states = [
+        "idle", "thinking", "working", "approval", "success", "error",
+    ];
     for s in required_states {
         if !manifest.states.contains_key(s) {
             errors.push(format!("missing state mapping: {s}"));
@@ -256,7 +270,10 @@ fn validate_pack(path: &Path) -> Result<ValidationReport> {
             }
         }
         // no binaries: block common executable extensions
-        if matches!(ext.as_str(), "exe" | "dll" | "so" | "dylib" | "bat" | "cmd" | "ps1" | "js") {
+        if matches!(
+            ext.as_str(),
+            "exe" | "dll" | "so" | "dylib" | "bat" | "cmd" | "ps1" | "js"
+        ) {
             errors.push(format!("executable/script not allowed in pack v1: {rel}"));
         }
         let mut file = fs::File::open(entry.path())?;
@@ -272,7 +289,9 @@ fn validate_pack(path: &Path) -> Result<ValidationReport> {
         hashes.push((rel, hex::encode(hasher.finalize())));
     }
     if total > MAX_PACK_BYTES {
-        errors.push(format!("pack exceeds size limit ({total} > {MAX_PACK_BYTES})"));
+        errors.push(format!(
+            "pack exceeds size limit ({total} > {MAX_PACK_BYTES})"
+        ));
     }
 
     for (state, asset_rel) in &manifest.states {
@@ -292,6 +311,18 @@ fn validate_pack(path: &Path) -> Result<ValidationReport> {
         }
     }
 
+    for (variant, asset_rel) in &manifest.variants {
+        if asset_rel.contains("..") || Path::new(asset_rel).is_absolute() {
+            errors.push(format!(
+                "invalid asset path for variant {variant}: {asset_rel}"
+            ));
+            continue;
+        }
+        if !path.join(asset_rel).exists() {
+            errors.push(format!("missing asset for variant {variant}: {asset_rel}"));
+        }
+    }
+
     let ok = errors.is_empty();
     Ok(ValidationReport {
         ok,
@@ -300,6 +331,7 @@ fn validate_pack(path: &Path) -> Result<ValidationReport> {
         version: manifest.version,
         license: manifest.license,
         states: required_states.iter().map(|s| s.to_string()).collect(),
+        variants: manifest.variants.keys().cloned().collect(),
         file_hashes: hashes,
         warnings,
         errors,
@@ -359,5 +391,30 @@ mod tests {
         let report = validate_pack(&dir.path().join("buddy")).unwrap();
         assert!(report.ok, "{:?}", report.errors);
         assert!(!report.warnings.is_empty());
+    }
+
+    #[test]
+    fn validate_rejects_missing_variant_asset() {
+        let dir = tempdir().unwrap();
+        pack_init("buddy", dir.path()).unwrap();
+        let pack = dir.path().join("buddy");
+        let manifest_path = pack.join("familiar.json");
+        let raw = fs::read_to_string(&manifest_path).unwrap();
+        let mut manifest: FamiliarManifest = serde_json::from_str(&raw).unwrap();
+        manifest
+            .variants
+            .insert("missing".into(), "assets/missing.png".into());
+        fs::write(
+            &manifest_path,
+            serde_json::to_string_pretty(&manifest).unwrap(),
+        )
+        .unwrap();
+
+        let report = validate_pack(&pack).unwrap();
+        assert!(!report.ok);
+        assert!(report
+            .errors
+            .iter()
+            .any(|error| error.contains("missing asset for variant missing")));
     }
 }
