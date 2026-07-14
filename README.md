@@ -25,21 +25,21 @@ history, workspace context, memory, autonomous execution, or API-key storage.
 
 ![OpenFamiliar Quick Ask preview](./docs/assets/openfamiliar-quick-ask.png)
 
-## Public beta candidate v0.1
+## Public beta v0.1.0
 
-| Capability                                          | Status                                           |
-| --------------------------------------------------- | ------------------------------------------------ |
-| Windows 11 x64 Tauri desktop                        | Implemented; local automated validation          |
-| Perrito Tech 64×64 frames at 128 px default         | Implemented; original CC BY 4.0 art              |
-| Static idle and event-only animation                | Implemented; no random movement or eye tracking  |
-| Teal, midnight, and burgundy prop-accent palettes   | Implemented; deterministic generated variants    |
-| Transparent mascot and separate Settings window     | Implemented                                      |
-| One-shot Quick Ask through Codex CLI                | Implemented with fake-CLI tests                  |
-| Timeout, cancellation, process-tree cleanup         | Implemented with fake-CLI tests                  |
-| System tray and click-through recovery              | Implemented                                      |
-| Non-sensitive preferences and monitor-safe position | Implemented with unit tests                      |
-| MSI and NSIS installers                             | Build configured; see release validation results |
-| Clean-user Windows smoke test                       | Operator step; not implied by compilation        |
+| Capability                                          | Status                                          |
+| --------------------------------------------------- | ----------------------------------------------- |
+| Windows 11 x64 Tauri desktop                        | Implemented; local automated validation         |
+| Perrito Tech 64×64 frames at 128 px default         | Implemented; original CC BY 4.0 art             |
+| Static idle and event-only animation                | Implemented; no random movement or eye tracking |
+| Teal, midnight, and burgundy prop-accent palettes   | Implemented; deterministic generated variants   |
+| Transparent mascot and separate Settings window     | Implemented                                     |
+| One-shot Quick Ask through Codex CLI                | Implemented with fake-CLI tests                 |
+| Timeout, cancellation, process-tree cleanup         | Implemented with fake-CLI tests                 |
+| System tray and click-through recovery              | Implemented                                     |
+| Non-sensitive preferences and monitor-safe position | Implemented with unit tests                     |
+| MSI and NSIS installers                             | Validated for the unsigned v0.1.0 public beta   |
+| Clean-user Windows smoke test                       | Passed on a separate Windows computer           |
 
 The beta runtime is local-first and idle-offline. It does not read Codex auth
 storage; it invokes the official CLI already installed and authenticated by the
@@ -48,10 +48,9 @@ event categories, not content.
 
 ## Download
 
-No official binary has been released yet. The first `v0.1.0` beta installer will
-be published only through [GitHub Releases](https://github.com/georgiegozz/openfamiliar/releases)
-after the clean-user Windows smoke test passes. Do not download OpenFamiliar
-binaries from third-party sites.
+Download the official `v0.1.0` public beta only from
+[GitHub Releases](https://github.com/georgiegozz/openfamiliar/releases/tag/v0.1.0).
+Do not download OpenFamiliar binaries from third-party sites.
 
 The initial beta will be unsigned, so Windows may display a SmartScreen warning.
 Each release will include `SHA256SUMS.txt`; public-repository builds also generate
@@ -139,9 +138,9 @@ pnpm --filter @openfamiliar/desktop tauri build
 ```
 
 Unsigned MSI and NSIS artifacts are produced below `target/release/bundle/`.
-The source is suitable for a pre-1.0 public beta after the checks above pass.
-Binary release claims remain blocked on code signing and the clean-user test; a
-successful local build is not a substitute for the checklist in
+The source is suitable for a pre-1.0 public beta after the checks above pass. A
+public binary must be signed or explicitly identified as an unsigned pre-release,
+and it must pass the clean-user checklist in
 [WINDOWS_MVP_SMOKE_TEST.md](./docs/testing/WINDOWS_MVP_SMOKE_TEST.md).
 
 ## Security and Privacy
