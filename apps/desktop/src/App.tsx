@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import type { MascotState } from "./lib/states";
 import { MASCOT_STATES } from "./lib/states";
 import { invokeBackend, isTauri } from "./lib/backend";
@@ -14,7 +14,7 @@ const PROVIDERS = [
 
 export function App() {
   const [state, setState] = useState<MascotState>("idle");
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false); // Starts collapsed (floating mascot only)
   const [speech, setSpeech] = useState("¡Hola! Soy Perrito Tech.");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -26,6 +26,8 @@ export function App() {
   const [contextPreview, setContextPreview] = useState("Sin workspace autorizado.");
   const [clickThrough, setClickThrough] = useState(false);
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const provider = useMemo(
     () => PROVIDERS.find((p) => p.id === providerId) ?? PROVIDERS[0]!,
     [providerId],
@@ -34,6 +36,20 @@ export function App() {
   useEffect(() => {
     setModel(provider.model);
   }, [provider]);
+
+  // Handle window resizing dynamically based on panel status
+  useEffect(() => {
+    if (panelOpen) {
+      invokeBackend("resize_window", { width: 380, height: 680 }).catch(console.error);
+    } else {
+      invokeBackend("resize_window", { width: 240, height: 280 }).catch(console.error);
+    }
+  }, [panelOpen]);
+
+  // Auto-scroll chat messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const applyState = useCallback(async (next: MascotState) => {
     setState(next);
@@ -58,9 +74,16 @@ export function App() {
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
       setSpeech(reply.slice(0, 140));
       await applyState("success");
-      setTimeout(() => void applyState("idle"), 1200);
+      setTimeout(() => void applyState("idle"), 1500);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      let msg = "Error al responder";
+      if (e instanceof Error) {
+        msg = e.message;
+      } else if (typeof e === "object" && e !== null && "message" in e) {
+        msg = String((e as { message: unknown }).message);
+      } else {
+        msg = String(e);
+      }
       setMessages((m) => [...m, { role: "error", content: msg }]);
       setSpeech("Error al responder");
       await applyState("error");
@@ -84,8 +107,11 @@ export function App() {
       setMode("read_only");
       await invokeBackend("set_security_mode", { mode: "read_only" });
       setSpeech("Workspace autorizado (read-only)");
+      await applyState("success");
+      setTimeout(() => void applyState("idle"), 1200);
     } catch (e) {
       setContextPreview(e instanceof Error ? e.message : String(e));
+      await applyState("error");
     }
   };
 
@@ -97,38 +123,55 @@ export function App() {
 
   return (
     <div className="app">
+      {/* Mascot Stage */}
       <div
         className="mascot-stage"
         data-tauri-drag-region
-        onDoubleClick={() => setPanelOpen((v) => !v)}
-        title="Doble clic: panel · Arrastrar: mover"
+        onClick={() => setPanelOpen((v) => !v)}
+        title="Clic: Abrir/Cerrar Chat · Arrastrar: Mover"
       >
-        {speech ? <div className="mascot-bubble">{speech}</div> : null}
-        <div className={`mascot-face ${state}`}>
-          <span className="ear left" />
-          <span className="ear right" />
-          <div className="eyes">
-            <span className="eye" />
-            <span className="eye" />
+        {speech ? (
+          <div className="mascot-bubble" onClick={(e) => e.stopPropagation()}>
+            {speech}
           </div>
-          <div className="nose" />
+        ) : null}
+        
+        <div className={`mascot-avatar-container ${state}`}>
+          <img src="/perrito.png" className="mascot-img" alt="Perrito Tech" />
+          <div className={`mascot-status-glow ${state}`} />
         </div>
-        <div className="state-chip">{state}</div>
+        
+        <div className={`state-badge ${state}`}>{state}</div>
       </div>
 
+      {/* Toolbar */}
       <div className="toolbar">
-        <button type="button" className="secondary" onClick={() => setPanelOpen((v) => !v)}>
-          {panelOpen ? "Ocultar panel" : "Chat / Config"}
+        <button
+          type="button"
+          className={`secondary ${panelOpen ? "active" : ""}`}
+          onClick={() => setPanelOpen((v) => !v)}
+        >
+          {panelOpen ? "Minimizar" : "Chat & Ajustes"}
         </button>
-        <button type="button" className="secondary" onClick={() => void toggleClickThrough()}>
-          Click-through: {clickThrough ? "ON" : "OFF"}
+        <button
+          type="button"
+          className={`secondary ${clickThrough ? "active" : ""}`}
+          onClick={() => void toggleClickThrough()}
+          title="Permite hacer clic a través del fondo de la ventana"
+        >
+          Fantasma: {clickThrough ? "ON" : "OFF"}
         </button>
       </div>
 
+      {/* Main Glassmorphic Panel */}
       <div className={`panel ${panelOpen ? "" : "hidden"}`}>
+        <div className="panel-header">
+          <h3>Ajustes de Perrito Tech</h3>
+        </div>
+        
         <div className="row">
-          <label>
-            Provider{" "}
+          <label className="field-group">
+            <span>Proveedor</span>
             <select
               value={providerId}
               onChange={(e) => setProviderId(e.target.value)}
@@ -141,14 +184,15 @@ export function App() {
               ))}
             </select>
           </label>
-          <label>
-            Model{" "}
+          <label className="field-group">
+            <span>Modelo</span>
             <input value={model} onChange={(e) => setModel(e.target.value)} disabled={busy} />
           </label>
         </div>
+
         <div className="row">
-          <label>
-            Mode{" "}
+          <label className="field-group">
+            <span>Modo de Seguridad</span>
             <select
               value={mode}
               onChange={(e) => {
@@ -157,13 +201,13 @@ export function App() {
                 void invokeBackend("set_security_mode", { mode: m });
               }}
             >
-              <option value="chat">Chat</option>
-              <option value="read_only">Read-only</option>
-              <option value="agent">Agent</option>
+              <option value="chat">Chat (Sin acceso a archivos)</option>
+              <option value="read_only">Lectura (Read-only)</option>
+              <option value="agent">Agente (Full autocontrol)</option>
             </select>
           </label>
-          <label>
-            State{" "}
+          <label className="field-group">
+            <span>Estado Forzado</span>
             <select
               value={state}
               onChange={(e) => void applyState(e.target.value as MascotState)}
@@ -176,53 +220,71 @@ export function App() {
             </select>
           </label>
         </div>
-        <div className="row">
+
+        <div className="row input-action">
           <input
             style={{ flex: 1 }}
-            placeholder="Ruta workspace (autorización explícita)"
+            placeholder="Ruta absoluta al workspace..."
             value={workspacePath}
             onChange={(e) => setWorkspacePath(e.target.value)}
           />
-          <button type="button" className="secondary" onClick={() => void authorizeWorkspace()}>
+          <button type="button" className="action-btn" onClick={() => void authorizeWorkspace()}>
             Autorizar
           </button>
         </div>
-        <div className="context-preview">{contextPreview}</div>
-        <div className="messages">
-          {messages.map((m, i) => (
-            <div key={i} className={`msg ${m.role}`}>
-              <strong>{m.role}:</strong> {m.content}
-            </div>
-          ))}
+        
+        <div className="context-preview-box">
+          <span className="section-label">Contexto del Workspace:</span>
+          <div className="context-preview">{contextPreview}</div>
         </div>
-        <textarea
-          placeholder="Pregunta a Perrito Tech…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void sendChat();
-            }
-          }}
-          disabled={busy}
-        />
-        <div className="row">
-          <button type="button" onClick={() => void sendChat()} disabled={busy || !input.trim()}>
-            {busy ? "…" : "Enviar"}
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => {
-              setMessages([]);
-              setSpeech("Listo.");
-              void applyState("idle");
+
+        <div className="chat-section">
+          <span className="section-label">Chat en Vivo:</span>
+          <div className="messages">
+            {messages.length === 0 ? (
+              <div className="empty-chat">No hay mensajes. ¡Pregúntame algo!</div>
+            ) : (
+              messages.map((m, i) => (
+                <div key={i} className={`msg ${m.role}`}>
+                  <span className="role-label">{m.role === "user" ? "Tú" : "Perrito"}:</span>
+                  <p>{m.content}</p>
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        <div className="chat-input-area">
+          <textarea
+            placeholder="Escribe algo aquí para Perrito Tech..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void sendChat();
+              }
             }}
-          >
-            Limpiar
-          </button>
-          <span className="state-chip">{isTauri() ? "tauri" : "web-mock"}</span>
+            disabled={busy}
+          />
+          <div className="chat-actions">
+            <button type="button" className="primary-btn" onClick={() => void sendChat()} disabled={busy || !input.trim()}>
+              {busy ? "Enviando..." : "Enviar"}
+            </button>
+            <button
+              type="button"
+              className="clear-btn"
+              onClick={() => {
+                setMessages([]);
+                setSpeech("Listo.");
+                void applyState("idle");
+              }}
+            >
+              Limpiar
+            </button>
+            <span className="environment-tag">{isTauri() ? "Tauri Native" : "Web Mock"}</span>
+          </div>
         </div>
       </div>
     </div>

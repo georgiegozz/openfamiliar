@@ -213,6 +213,61 @@ fn get_state(state: State<'_, AppState>) -> String {
     state.core.state().as_str().to_string()
 }
 
+#[tauri::command]
+fn resize_window(app: AppHandle, width: f64, height: f64) -> Result<(), CmdError> {
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize { width, height }));
+    }
+    Ok(())
+}
+
+fn load_env_file() {
+    let mut log_content = String::new();
+    let paths = vec![
+        std::path::PathBuf::from(".env"),
+        std::path::PathBuf::from("../.env"),
+        std::path::PathBuf::from("../../.env"),
+        std::path::PathBuf::from("../../../.env"),
+    ];
+    if let Ok(cd) = std::env::current_dir() {
+        log_content.push_str(&format!("Checking env paths. Current dir: {:?}\n", cd));
+    }
+    for path in paths {
+        log_content.push_str(&format!("Checking path: {:?}, exists: {}\n", path, path.exists()));
+        if path.exists() {
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                let mut loaded_keys = Vec::new();
+                for line in content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with('#') {
+                        continue;
+                    }
+                    if let Some((key, val)) = line.split_once('=') {
+                        let key = key.trim();
+                        let val = val.trim();
+                        let val = val.strip_prefix('"').unwrap_or(val);
+                        let val = val.strip_suffix('"').unwrap_or(val);
+                        let val = val.strip_prefix('\'').unwrap_or(val);
+                        let val = val.strip_suffix('\'').unwrap_or(val);
+                        std::env::set_var(key, val);
+                        loaded_keys.push(key.to_string());
+                    }
+                }
+                log_content.push_str(&format!("Loaded keys from {:?}: {:?}\n", path, loaded_keys));
+                break;
+            }
+        }
+    }
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log")
+    {
+        use std::io::Write;
+        let _ = writeln!(f, "{}", log_content);
+    }
+}
+
 fn build_core() -> Result<FamiliarCore, String> {
     match AppPaths::discover() {
         Ok(paths) => {
@@ -225,6 +280,8 @@ fn build_core() -> Result<FamiliarCore, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    load_env_file();
+    let _ = std::fs::write("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log", "run() started\n");
     let core = Arc::new(build_core().expect("core init"));
 
     tauri::Builder::default()
@@ -243,9 +300,20 @@ pub fn run() {
             set_security_mode_args,
             set_click_through,
             set_click_through_args,
-            get_state
+            get_state,
+            resize_window
         ])
         .setup(|app| {
+            let has_main = app.get_webview_window("main").is_some();
+            let windows: Vec<String> = app.webview_windows().keys().cloned().collect();
+            if let Ok(mut f) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log")
+            {
+                use std::io::Write;
+                let _ = writeln!(f, "setup() reached. has_main: {}, all windows: {:?}", has_main, windows);
+            }
             // Map frontend camelCase commands to *_args handlers by registering aliases via JS.
             // Also create tray.
             let quit = MenuItem::with_id(app, "quit", "Quit OpenFamiliar", true, None::<&str>)?;
@@ -281,6 +349,8 @@ pub fn run() {
                 .build(app)?;
 
             if let Some(win) = app.get_webview_window("main") {
+                let _ = win.show();
+                let _ = win.set_focus();
                 let app_handle = app.handle().clone();
                 win.on_window_event(move |e| {
                     if let WindowEvent::CloseRequested { api, .. } = e {
@@ -292,6 +362,14 @@ pub fn run() {
                     }
                 });
             }
+            let _ = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("C:\\Users\\jorge gonzalez\\Music\\proyects\\OpenFamiliar\\tauri-diag.log")
+                .map(|mut f| {
+                    use std::io::Write;
+                    let _ = writeln!(f, "setup() completed successfully");
+                });
             Ok(())
         })
         .run(tauri::generate_context!())

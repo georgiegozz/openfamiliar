@@ -340,4 +340,59 @@ mod tests {
         assert!(ids.contains(&"generic".to_string()));
         assert!(ids.contains(&"codex".to_string()));
     }
+
+    #[test]
+    fn generic_adapter_builds_command() {
+        let adapter = GenericSubprocessAdapter::new("test", "echo", vec!["--flag".into()]);
+        let (program, args) = adapter
+            .build_command("do something", std::path::Path::new("C:/ws"))
+            .unwrap();
+        assert_eq!(program, "echo");
+        assert_eq!(args, vec!["--flag".to_string(), "do something".to_string()]);
+    }
+
+    #[test]
+    fn named_cli_adapters_build_args() {
+        let gemini = gemini_cli_adapter();
+        let (prog, args) = gemini
+            .build_command("fix bug", std::path::Path::new("C:/ws"))
+            .unwrap();
+        assert_eq!(prog, "gemini");
+        assert_eq!(args, vec!["fix bug".to_string()]);
+
+        let codex = codex_adapter();
+        let (prog, args) = codex
+            .build_command("refactor", std::path::Path::new("C:/ws"))
+            .unwrap();
+        assert_eq!(prog, "codex");
+        assert_eq!(args, vec!["exec".to_string(), "refactor".to_string()]);
+
+        let oc = opencode_adapter();
+        let (prog, args) = oc
+            .build_command("deploy", std::path::Path::new("C:/ws"))
+            .unwrap();
+        assert_eq!(prog, "opencode");
+        assert_eq!(args, vec!["run".to_string(), "deploy".to_string()]);
+
+        let ag = antigravity_adapter();
+        let (prog, args) = ag
+            .build_command("task", std::path::Path::new("C:/ws"))
+            .unwrap();
+        assert_eq!(prog, "antigravity");
+        assert_eq!(args, vec!["task".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn bridge_start_blocked_in_chat_mode() {
+        let broker = Arc::new(PermissionBroker::new(SecurityMode::Chat, None));
+        let bridge = AgentBridge::new(broker);
+        let (tx, _rx) = mpsc::channel(10);
+        let result = bridge
+            .start("generic", "test task", std::path::PathBuf::from("C:/ws"), tx)
+            .await;
+        // In chat mode start() must fail — either because the adapter
+        // binary is unavailable (Windows: echo is a shell built-in) or
+        // because agent mode is required for the permission gate.
+        assert!(result.is_err());
+    }
 }

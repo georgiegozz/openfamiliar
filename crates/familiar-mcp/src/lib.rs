@@ -235,4 +235,54 @@ mod tests {
         assert_eq!(res["ok"], true);
         assert_eq!(core.state(), MascotState::Thinking);
     }
+
+    #[test]
+    fn list_resources_contains_expected() {
+        let core = Arc::new(FamiliarCore::in_memory().unwrap());
+        let mcp = LocalMcpServer::new(core);
+        let resources = mcp.list_resources();
+        let uris: Vec<&str> = resources.iter().map(|r| r.uri.as_str()).collect();
+        assert!(uris.contains(&"familiar://workspace/tree"));
+        assert!(uris.contains(&"familiar://workspace/active-file"));
+        assert!(uris.contains(&"familiar://workspace/git-diff"));
+        assert!(uris.contains(&"familiar://session/status"));
+        assert_eq!(resources.len(), 4);
+    }
+
+    #[test]
+    fn read_session_status_returns_state() {
+        let core = Arc::new(FamiliarCore::in_memory().unwrap());
+        core.set_state(MascotState::Working);
+        let mcp = LocalMcpServer::new(core);
+        let result = mcp.read_resource("familiar://session/status").unwrap();
+        assert_eq!(result["state"], "working");
+    }
+
+    #[test]
+    fn call_familiar_say_ok() {
+        let core = Arc::new(FamiliarCore::in_memory().unwrap());
+        let mcp = LocalMcpServer::new(core);
+        let result = mcp
+            .call_tool("familiar_say", json!({"text": "hola perrito"}))
+            .unwrap();
+        assert_eq!(result["ok"], true);
+    }
+
+    #[test]
+    fn call_familiar_notify_ok() {
+        let core = Arc::new(FamiliarCore::in_memory().unwrap());
+        let mcp = LocalMcpServer::new(core);
+        let result = mcp
+            .call_tool("familiar_notify", json!({"message": "build done"}))
+            .unwrap();
+        assert_eq!(result["ok"], true);
+    }
+
+    #[test]
+    fn handle_jsonrpc_unknown_method() {
+        let core = Arc::new(FamiliarCore::in_memory().unwrap());
+        let mcp = LocalMcpServer::new(core);
+        let result = mcp.handle_jsonrpc("nonexistent/method", json!({}));
+        assert!(result.is_err());
+    }
 }

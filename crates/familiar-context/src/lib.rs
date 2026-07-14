@@ -311,4 +311,54 @@ mod tests {
         assert_eq!(preview.files.len(), 1);
         assert!(preview.files[0].content.as_ref().unwrap().contains("main"));
     }
+
+    #[test]
+    fn authorize_nonexistent_path_fails() {
+        let mut ctx = WorkspaceContext::new(ContextBudget::default());
+        let result = ctx.authorize_root("bad", PathBuf::from("C:/nonexistent_path_xyz_12345"));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn authorize_file_not_dir_fails() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("not_a_dir.txt");
+        fs::write(&file_path, "content").unwrap();
+        let mut ctx = WorkspaceContext::new(ContextBudget::default());
+        let result = ctx.authorize_root("file", &file_path);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn estimate_tokens_heuristic() {
+        // 4 chars per token, minimum 1
+        assert_eq!(estimate_tokens(0), 1);
+        assert_eq!(estimate_tokens(4), 1);
+        assert_eq!(estimate_tokens(8), 2);
+        assert_eq!(estimate_tokens(100), 25);
+        assert_eq!(estimate_tokens(1000), 250);
+    }
+
+    #[test]
+    fn binary_file_skipped_in_preview() {
+        let dir = tempdir().unwrap();
+        // Create a file with null bytes (binary)
+        let binary_path = dir.path().join("image.bin");
+        fs::write(&binary_path, b"PNG\x00\x00\x00binary content").unwrap();
+        // Create a normal text file
+        let text_path = dir.path().join("readme.txt");
+        fs::write(&text_path, "hello").unwrap();
+        let mut ctx = WorkspaceContext::new(ContextBudget::default());
+        ctx.authorize_root("ws", dir.path()).unwrap();
+        let preview = ctx
+            .read_files(
+                "ws",
+                &[PathBuf::from("image.bin"), PathBuf::from("readme.txt")],
+                true,
+            )
+            .unwrap();
+        // Binary file should be skipped, only text file included
+        assert_eq!(preview.files.len(), 1);
+        assert_eq!(preview.files[0].path, "readme.txt");
+    }
 }

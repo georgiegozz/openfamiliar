@@ -3,6 +3,7 @@
 use chrono::{DateTime, Utc};
 use directories::ProjectDirs;
 use rusqlite::{params, Connection};
+use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -72,7 +73,7 @@ pub struct SessionRecord {
 }
 
 pub struct Database {
-    conn: Connection,
+    conn: Mutex<Connection>,
 }
 
 impl Database {
@@ -81,20 +82,21 @@ impl Database {
             fs::create_dir_all(parent)?;
         }
         let conn = Connection::open(path)?;
-        let db = Self { conn };
+        let db = Self { conn: Mutex::new(conn) };
         db.migrate()?;
         Ok(db)
     }
 
     pub fn open_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;
-        let db = Self { conn };
+        let db = Self { conn: Mutex::new(conn) };
         db.migrate()?;
         Ok(db)
     }
 
     fn migrate(&self) -> Result<()> {
-        self.conn.execute_batch(
+        let conn = self.conn.lock().expect("db lock");
+        conn.execute_batch(
             r#"
             PRAGMA foreign_keys = ON;
             CREATE TABLE IF NOT EXISTS schema_version (
@@ -125,11 +127,10 @@ impl Database {
             );
             "#,
         )?;
-        let count: i64 = self
-            .conn
+        let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM schema_version", [], |r| r.get(0))?;
         if count == 0 {
-            self.conn
+            conn
                 .execute("INSERT INTO schema_version(version) VALUES (?1)", params![1i64])?;
         }
         Ok(())
@@ -145,7 +146,8 @@ impl Database {
             created_at: now,
             updated_at: now,
         };
-        self.conn.execute(
+        let conn = self.conn.lock().expect("db lock");
+        conn.execute(
             "INSERT INTO sessions(id, title, provider_id, model, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6)",
             params![
                 rec.id,
@@ -166,7 +168,8 @@ impl Database {
             content: content.to_string(),
             created_at: Utc::now(),
         };
-        self.conn.execute(
+        let conn = self.conn.lock().expect("db lock");
+        conn.execute(
             "INSERT INTO messages(id, session_id, role, content, created_at) VALUES (?1,?2,?3,?4,?5)",
             params![
                 msg.id,
@@ -176,7 +179,7 @@ impl Database {
                 msg.created_at.to_rfc3339()
             ],
         )?;
-        self.conn.execute(
+        conn.execute(
             "UPDATE sessions SET updated_at = ?1 WHERE id = ?2",
             params![Utc::now().to_rfc3339(), session_id],
         )?;
@@ -184,7 +187,8 @@ impl Database {
     }
 
     pub fn list_messages(&self, session_id: &str) -> Result<Vec<ChatMessage>> {
-        let mut stmt = self.conn.prepare(
+        let conn = self.conn.lock().expect("db lock");
+        let mut stmt = conn.prepare(
             "SELECT id, role, content, created_at FROM messages WHERE session_id = ?1 ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map(params![session_id], |row| {
@@ -206,7 +210,8 @@ impl Database {
     }
 
     pub fn save_window_state(&self, monitor_id: &str, x: f64, y: f64, scale: f64, mascot_size: f64) -> Result<()> {
-        self.conn.execute(
+        let conn = self.conn.lock().expect("db lock");
+        conn.execute(
             "INSERT INTO window_state(monitor_id, x, y, scale, mascot_size) VALUES (?1,?2,?3,?4,?5)
              ON CONFLICT(monitor_id) DO UPDATE SET x=excluded.x, y=excluded.y, scale=excluded.scale, mascot_size=excluded.mascot_size",
             params![monitor_id, x, y, scale, mascot_size],
@@ -215,7 +220,8 @@ impl Database {
     }
 
     pub fn load_window_state(&self, monitor_id: &str) -> Result<Option<(f64, f64, f64, f64)>> {
-        let mut stmt = self.conn.prepare(
+        let conn = self.conn.lock().expect("db lock");
+        let mut stmt = conn.prepare(
             "SELECT x, y, scale, mascot_size FROM window_state WHERE monitor_id = ?1",
         )?;
         let mut rows = stmt.query(params![monitor_id])?;
@@ -341,5 +347,73 @@ mod tests {
         let s = redact_secrets("api_key=sk-abcdefghijklmnop");
         assert!(!s.contains("sk-abcdefghijklmnop"));
         assert!(s.contains("REDACTED"));
+    }
+
+    #[test]
+    fn session_multiple_messages_order() {
+        let db = Database::open_in_memory().unwrap();
+        let s = db.create_session("chat", "mock", "mock-model").unwrap();
+        db.append_message(&s.id, "user", "first").unwrap();
+        db.append_message(&s.id, "assistant", "second").unwrap();
+        db.append_message(&s.id, "user", "third").unwrap();
+        let msgs = db.list_messages(&s.id).unwrap();
+        assert_eq!(msgs.len(), 3);
+        assert_eq!(msgs[0].content, "first");
+        assert_eq!(msgs[1].content, "second");
+        assert_eq!(msgs[2].content, "third");
+        assert_eq!(msgs[0].role, "user");
+        assert_eq!(msgs[1].role, "assistant");
+    }
+
+    #[test]
+    fn window_state_upsert() {
+        let db = Database::open_in_memory().unwrap();
+        db.save_window_state("primary", 10.0, 20.0, 1.0, 64.0).unwrap();
+        db.save_window_state("primary", 100.0, 200.0, 2.0, 128.0).unwrap();
+        let st = db.load_window_state("primary").unwrap().unwrap();
+        assert_eq!(st.0, 100.0);
+        assert_eq!(st.1, 200.0);
+        assert_eq!(st.2, 2.0);
+        assert_eq!(st.3, 128.0);
+    }
+
+    #[test]
+    fn redact_hides_gemini_keys() {
+        let s = redact_secrets("key=AIzaSyB1234567890abc");
+        assert!(!s.contains("AIzaSyB1234567890abc"));
+        assert!(s.contains("REDACTED"));
+    }
+
+    #[test]
+    fn redact_preserves_safe_text() {
+        let input = "Hello world! This is a normal log line with no secrets.";
+        let output = redact_secrets(input);
+        assert_eq!(input, output);
+    }
+
+    #[test]
+    fn audit_log_writes_jsonl() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test-audit.jsonl");
+        let log = AuditLog::new(&path);
+        let event = AuditEvent {
+            id: "ev1".into(),
+            ts: chrono::Utc::now(),
+            actor: "test-agent".into(),
+            operation: "WorkspaceRead".into(),
+            target: "/tmp/file.txt".into(),
+            decision: "allow:once".into(),
+            details: serde_json::json!({"risk": "low"}),
+        };
+        log.append(&event).unwrap();
+        log.append(&event).unwrap();
+        let content = std::fs::read_to_string(&path).unwrap();
+        let lines: Vec<&str> = content.trim().lines().collect();
+        assert_eq!(lines.len(), 2);
+        // Each line should be valid JSON
+        for line in &lines {
+            let parsed: serde_json::Value = serde_json::from_str(line).unwrap();
+            assert_eq!(parsed["actor"], "test-agent");
+        }
     }
 }

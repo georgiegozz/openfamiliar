@@ -322,4 +322,97 @@ mod tests {
             .unwrap();
         assert!(text.to_lowercase().contains("hola") || !text.is_empty());
     }
+
+    #[test]
+    fn mascot_state_parse_all_variants() {
+        let cases = vec![
+            ("idle", Some(MascotState::Idle)),
+            ("listening", Some(MascotState::Listening)),
+            ("thinking", Some(MascotState::Thinking)),
+            ("working", Some(MascotState::Working)),
+            ("waiting_approval", Some(MascotState::WaitingApproval)),
+            ("approval", Some(MascotState::WaitingApproval)),
+            ("success", Some(MascotState::Success)),
+            ("error", Some(MascotState::Error)),
+            ("sleeping", Some(MascotState::Sleeping)),
+            ("offline", Some(MascotState::Offline)),
+            ("invalid", None),
+            ("", None),
+        ];
+        for (input, expected) in cases {
+            assert_eq!(MascotState::parse(input), expected, "failed for input: {input}");
+        }
+    }
+
+    #[test]
+    fn mascot_state_as_str_roundtrip() {
+        let states = vec![
+            MascotState::Idle,
+            MascotState::Listening,
+            MascotState::Thinking,
+            MascotState::Working,
+            MascotState::WaitingApproval,
+            MascotState::Success,
+            MascotState::Error,
+            MascotState::Sleeping,
+            MascotState::Offline,
+        ];
+        for state in states {
+            let s = state.as_str();
+            let parsed = MascotState::parse(s).expect(&format!("roundtrip failed for {s}"));
+            assert_eq!(parsed, state);
+        }
+    }
+
+    #[test]
+    fn core_say_updates_speech() {
+        let core = FamiliarCore::in_memory().unwrap();
+        let rx = core.subscribe();
+        core.say("hello perrito");
+        let event = rx.try_recv().unwrap();
+        match event {
+            CoreEvent::Speech { text } => assert_eq!(text, "hello perrito"),
+            other => panic!("expected Speech, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn core_notify_emits_event() {
+        let core = FamiliarCore::in_memory().unwrap();
+        let rx = core.subscribe();
+        core.notify("build passed");
+        let event = rx.try_recv().unwrap();
+        match event {
+            CoreEvent::Notification { message } => assert_eq!(message, "build passed"),
+            other => panic!("expected Notification, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn core_queue_approval_transitions_state() {
+        let core = FamiliarCore::in_memory().unwrap();
+        let rx = core.subscribe();
+        let id = core.queue_approval("Delete file", "rm -rf /tmp/test");
+        assert!(!id.is_empty());
+        assert_eq!(core.state(), MascotState::WaitingApproval);
+        // Should emit StateChanged then ApprovalQueued
+        let mut found_approval = false;
+        while let Ok(event) = rx.try_recv() {
+            if let CoreEvent::ApprovalQueued { title, detail, .. } = event {
+                assert_eq!(title, "Delete file");
+                assert_eq!(detail, "rm -rf /tmp/test");
+                found_approval = true;
+            }
+        }
+        assert!(found_approval, "ApprovalQueued event not emitted");
+    }
+
+    #[test]
+    fn core_set_security_mode() {
+        let core = FamiliarCore::in_memory().unwrap();
+        assert_eq!(core.security_mode(), SecurityMode::Chat);
+        core.set_security_mode(SecurityMode::Agent);
+        assert_eq!(core.security_mode(), SecurityMode::Agent);
+        assert_eq!(core.permissions.mode(), SecurityMode::Agent);
+    }
 }

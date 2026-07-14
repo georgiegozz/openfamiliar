@@ -358,4 +358,153 @@ mod tests {
             })
             .is_ok());
     }
+
+    #[test]
+    fn operation_is_mutable_classification() {
+        // Non-mutable operations
+        assert!(!Operation::WorkspaceRead.is_mutable());
+        assert!(!Operation::WorkspaceSearch.is_mutable());
+        assert!(!Operation::GitRead.is_mutable());
+        assert!(!Operation::GitDiff.is_mutable());
+        assert!(!Operation::ClipboardRead.is_mutable());
+        assert!(!Operation::NetworkFetch.is_mutable());
+        // Mutable operations
+        assert!(Operation::WorkspaceWrite.is_mutable());
+        assert!(Operation::WorkspaceDelete.is_mutable());
+        assert!(Operation::ProcessExecute.is_mutable());
+        assert!(Operation::ClipboardWrite.is_mutable());
+    }
+
+    #[test]
+    fn operation_risk_hint_values() {
+        assert_eq!(Operation::WorkspaceRead.risk_hint(), "low");
+        assert_eq!(Operation::GitRead.risk_hint(), "low");
+        assert_eq!(Operation::NetworkFetch.risk_hint(), "medium");
+        assert_eq!(Operation::ClipboardRead.risk_hint(), "medium");
+        assert_eq!(Operation::WorkspaceWrite.risk_hint(), "high");
+        assert_eq!(Operation::ClipboardWrite.risk_hint(), "high");
+        assert_eq!(Operation::WorkspaceDelete.risk_hint(), "critical");
+        assert_eq!(Operation::ProcessExecute.risk_hint(), "critical");
+    }
+
+    #[test]
+    fn agent_deny_and_block_persists() {
+        let broker = PermissionBroker::new(SecurityMode::Agent, None);
+        let req = PermissionRequest {
+            id: "b1".into(),
+            agent: "test".into(),
+            operation: Operation::WorkspaceDelete,
+            path: Some("C:/proj".into()),
+            command: None,
+            cwd: None,
+            files_to_modify: vec![],
+            risk: String::new(),
+        };
+        // First request goes to pending
+        let _ = broker.request(req);
+        // Deny and block
+        broker
+            .decide(PermissionDecision {
+                request_id: "b1".into(),
+                scope: ApprovalScope::DenyAndBlock,
+                approved: false,
+            })
+            .unwrap();
+        // Subsequent requests for same operation should be blocked
+        let err = broker
+            .request(PermissionRequest {
+                id: String::new(),
+                agent: "test".into(),
+                operation: Operation::WorkspaceDelete,
+                path: Some("C:/other".into()),
+                command: None,
+                cwd: None,
+                files_to_modify: vec![],
+                risk: String::new(),
+            })
+            .unwrap_err();
+        assert!(matches!(err, PermissionError::Blocked(_)));
+    }
+
+    #[test]
+    fn agent_folder_grant_scoped() {
+        let broker = PermissionBroker::new(SecurityMode::Agent, None);
+        // Request for folder A
+        let req = PermissionRequest {
+            id: "f1".into(),
+            agent: "test".into(),
+            operation: Operation::WorkspaceWrite,
+            path: Some("C:/proj/src".into()),
+            command: None,
+            cwd: None,
+            files_to_modify: vec!["a.rs".into()],
+            risk: String::new(),
+        };
+        let _ = broker.request(req);
+        broker
+            .decide(PermissionDecision {
+                request_id: "f1".into(),
+                scope: ApprovalScope::OperationInFolder,
+                approved: true,
+            })
+            .unwrap();
+        // Same folder should be allowed
+        assert!(broker
+            .request(PermissionRequest {
+                id: String::new(),
+                agent: "test".into(),
+                operation: Operation::WorkspaceWrite,
+                path: Some("C:/proj/src".into()),
+                command: None,
+                cwd: None,
+                files_to_modify: vec!["b.rs".into()],
+                risk: String::new(),
+            })
+            .is_ok());
+        // Different folder should require approval
+        let err = broker
+            .request(PermissionRequest {
+                id: String::new(),
+                agent: "test".into(),
+                operation: Operation::WorkspaceWrite,
+                path: Some("C:/proj/other".into()),
+                command: None,
+                cwd: None,
+                files_to_modify: vec!["c.rs".into()],
+                risk: String::new(),
+            })
+            .unwrap_err();
+        assert!(matches!(err, PermissionError::ApprovalRequired(_)));
+    }
+
+    #[test]
+    fn readonly_blocks_network_and_clipboard() {
+        let broker = PermissionBroker::new(SecurityMode::ReadOnly, None);
+        // NetworkFetch should be denied in ReadOnly
+        assert!(broker
+            .request(PermissionRequest {
+                id: String::new(),
+                agent: "test".into(),
+                operation: Operation::NetworkFetch,
+                path: None,
+                command: None,
+                cwd: None,
+                files_to_modify: vec![],
+                risk: String::new(),
+            })
+            .is_err());
+        // ClipboardRead should be denied in ReadOnly
+        assert!(broker
+            .request(PermissionRequest {
+                id: String::new(),
+                agent: "test".into(),
+                operation: Operation::ClipboardRead,
+                path: None,
+                command: None,
+                cwd: None,
+                files_to_modify: vec![],
+                risk: String::new(),
+            })
+            .is_err());
+    }
 }
