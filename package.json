@@ -17,12 +17,13 @@
     "typecheck": "pnpm -r --if-present run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
-    "validate:packs": "pnpm --filter @openfamiliar/cli start -- pack validate ../../mascots/perrito-tech && pnpm --filter @openfamiliar/cli start -- pack validate ../../mascots/blank-template",
+    "validate:packs": "cargo run -p familiar-cli -- pack validate mascots/perrito-tech && cargo run -p familiar-cli -- pack validate mascots/blank-template",
     "schema:check": "pnpm --filter @openfamiliar/schemas test",
     "ci:js": "pnpm format:check && pnpm typecheck && pnpm test && pnpm validate:packs"
   },
   "devDependencies": {
-    "prettier": "^3.4.2",
-    "typescript": "^5.7.2"
+    "@types/node": "20.17.30",
+    "prettier": "3.9.5",
+    "typescript": "5.9.3"
   }
 }

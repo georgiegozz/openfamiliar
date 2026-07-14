@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { AgentEvent } from "./index.ts";
+import type { AgentEvent } from "./index";
 
 test("event shape", () => {
   const e: AgentEvent = { type: "session.started", sessionId: "1" };
