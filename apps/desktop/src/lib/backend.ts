@@ -1,21 +1,18 @@
-/** Thin IPC layer: Tauri when available, browser mock otherwise. */
+import type {
+  AppPreferences,
+  BackendError,
+  OneShotRequest,
+  OneShotResult,
+  ProviderStatus,
+  SavedPosition,
+} from "./types";
+import { DEFAULT_PREFERENCES } from "./types";
+
+/** Narrow IPC surface: no generic shell, workspace, provider, or agent commands. */
 
 export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
-
-/**
- * Frontend uses camelCase payloads. Rust exposes both direct args and `*_args`
- * commands; we prefer the `*_args` variants for object payloads.
- */
-const CMD_MAP: Record<string, string> = {
-  set_mascot_state: "set_mascot_state_v2",
-  chat: "chat_args",
-  authorize_workspace: "authorize_workspace_args",
-  preview_workspace: "preview_workspace_args",
-  set_security_mode: "set_security_mode_args",
-  set_click_through: "set_click_through_args",
-};
 
 export async function invokeBackend<T = unknown>(
   cmd: string,
@@ -23,30 +20,82 @@ export async function invokeBackend<T = unknown>(
 ): Promise<T> {
   if (isTauri()) {
     const { invoke } = await import("@tauri-apps/api/core");
-    const mapped = CMD_MAP[cmd] ?? cmd;
-    if (mapped.endsWith("_args") || mapped.endsWith("_v2")) {
-      return invoke<T>(mapped, { args });
-    }
-    return invoke<T>(mapped, args);
+    return invoke<T>(cmd, args);
   }
   return mockInvoke<T>(cmd, args);
 }
 
-async function mockInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+export const backend = {
+  detectCodex: () => invokeBackend<ProviderStatus>("detect_codex"),
+  askCodex: (request: OneShotRequest) =>
+    invokeBackend<OneShotResult>("ask_codex", { request }),
+  cancelCodex: (requestId: string) =>
+    invokeBackend<void>("cancel_codex", { requestId }),
+  getPreferences: () => invokeBackend<AppPreferences>("get_preferences"),
+  updatePreferences: (preferences: AppPreferences) =>
+    invokeBackend<AppPreferences>("update_preferences", { preferences }),
+  openSettings: () => invokeBackend<void>("open_settings"),
+  openQuickAsk: () => invokeBackend<void>("open_quick_ask"),
+  setClickThrough: (enabled: boolean) =>
+    invokeBackend<AppPreferences>("set_click_through", { enabled }),
+  setAlwaysOnTop: (enabled: boolean) =>
+    invokeBackend<AppPreferences>("set_always_on_top", { enabled }),
+  saveMascotPosition: (position: SavedPosition) =>
+    invokeBackend<AppPreferences>("save_mascot_position", { position }),
+  resetMascotPosition: () =>
+    invokeBackend<AppPreferences>("reset_mascot_position"),
+  quit: () => invokeBackend<void>("quit_app"),
+};
+
+export function normalizeBackendError(error: unknown): BackendError {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "kind" in error &&
+    "message" in error
+  ) {
+    return error as BackendError;
+  }
+  return {
+    kind: "unknown",
+    message: error instanceof Error ? error.message : String(error),
+  };
+}
+
+async function mockInvoke<T>(
+  cmd: string,
+  args?: Record<string, unknown>,
+): Promise<T> {
   switch (cmd) {
-    case "set_mascot_state":
-    case "set_click_through":
-    case "set_security_mode":
+    case "open_settings":
+    case "open_quick_ask":
+    case "cancel_codex":
+    case "quit_app":
       return undefined as T;
-    case "chat": {
-      const message = String(args?.message ?? "");
-      await new Promise((r) => setTimeout(r, 200));
-      return `Perrito Tech (web-mock): recibí «${message}». Arranca con Tauri para providers reales.` as T;
-    }
-    case "authorize_workspace":
-      return { ok: true } as T;
-    case "preview_workspace":
-      return "Preview mock: selecciona archivos tras autorizar en build Tauri." as T;
+    case "set_click_through":
+    case "set_always_on_top":
+    case "save_mascot_position":
+    case "reset_mascot_position":
+    case "update_preferences":
+      return (args?.preferences ?? DEFAULT_PREFERENCES) as T;
+    case "get_preferences":
+      return DEFAULT_PREFERENCES as T;
+    case "detect_codex":
+      return {
+        installed: false,
+        authenticated: false,
+        compatible: false,
+        message:
+          "Browser preview: Codex CLI detection requires the Tauri build.",
+      } as T;
+    case "ask_codex":
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      return {
+        requestId: String(
+          (args?.request as OneShotRequest | undefined)?.requestId ?? "preview",
+        ),
+        answer: "Browser preview only. Run the Tauri build to use Codex CLI.",
+      } as T;
     default:
       throw new Error(`Unknown command in web mock: ${cmd}`);
   }
