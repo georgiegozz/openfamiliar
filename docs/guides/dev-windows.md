@@ -7,12 +7,12 @@
 3. **Visual Studio Build Tools 2022** with workload **Desktop development with C++**
    (`link.exe` / MSVC). Required for `x86_64-pc-windows-msvc`.
 4. **WebView2** (usually preinstalled on Windows 11)
-5. Optional: **Ollama** for local models
+5. **Codex CLI**, installed and authenticated for the human Quick Ask smoke test
 
 ## Bootstrap
 
 ```powershell
-cd "C:\Users\jorge gonzalez\Music\proyects\openfamiliar"
+# Run from the root of your OpenFamiliar clone.
 $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
 .\scripts\bootstrap.ps1
 .\scripts\test-all.ps1

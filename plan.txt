@@ -971,6 +971,6 @@ mi repo provado de git es git remote add origin https://github.com/georgiegozz/o
 git branch -M main
 git push -u origin main
 
-al final de la implamentacion todo debe de quedar dentro de C:\Users\jorge gonzalez\Music\proyects\openfamiliar y mandar comit y push a main, el repo es privado ahorita también genera un manual de las cosas eu tendría que hacer posterior a la implenentacionpara darse sguimineto
+al final de la implamentacion todo debe de quedar dentro del repositorio OpenFamiliar y mandar comit y push a main, el repo es privado ahorita también genera un manual de las cosas eu tendría que hacer posterior a la implenentacionpara darse sguimineto
 
 implmenta las fases qe esten a tu alcances que creoq ue son casi todo menos lo mnualn y parte crea un documento solo para mi ignorado en gitignore que sea mi seguiminto y que se genere en plan ahíy as deciciones tomadas y porque y siguientes pasos después de ralizar cada fase y is es necesario retrospectiva a la fases y una vez completado comit y push asi hasta finalizar la toda la soluicon, teneindo en cuenta la generación de manual de cosas qu yo tengo que hacerocmo humano  y las prubeas que tendri auq ehacer, al final comi ty push
