@@ -29,8 +29,8 @@
     "ci:js": "pnpm format:check && pnpm typecheck && pnpm test && pnpm assets:check && pnpm validate:packs && pnpm licenses:check"
   },
   "devDependencies": {
-    "@types/node": "20.17.30",
+    "@types/node": "26.1.1",
     "prettier": "3.9.5",
-    "typescript": "5.9.3"
+    "typescript": "7.0.2"
   }
 }
