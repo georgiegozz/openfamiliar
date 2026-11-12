@@ -219,7 +219,22 @@ export function SettingsWindow() {
               <small>
                 Codex, OpenCode y Antigravity usan la sesión de su propio CLI.
                 Anthropic guarda la API key solo en el almacén de credenciales
-                del sistema, nunca en preferences.json.
+                del sistema, nunca en preferences.json. El webview no hace fetch
+                al proveedor.
+              </small>
+            </label>
+            <label className="settings-field">
+              <span>Modelo de Anthropic (no secreto)</span>
+              <input
+                value={preferences.anthropicModel}
+                maxLength={80}
+                onChange={(event) =>
+                  update("anthropicModel", event.target.value)
+                }
+              />
+              <small>
+                Predeterminado: claude-sonnet-4-5. Se envía como id de modelo,
+                no es un secreto.
               </small>
             </label>
             <label className="settings-field">

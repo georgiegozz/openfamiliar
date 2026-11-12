@@ -9,6 +9,7 @@ members = [
   "crates/familiar-mcp",
   "crates/familiar-pixel",
   "crates/familiar-credentials",
+  "crates/familiar-anthropic",
   "apps/desktop/src-tauri",
   "tools/familiar-cli",
 ]
@@ -21,6 +22,7 @@ default-members = [
   "crates/familiar-mcp",
   "crates/familiar-pixel",
   "crates/familiar-credentials",
+  "crates/familiar-anthropic",
   "tools/familiar-cli",
 ]
 

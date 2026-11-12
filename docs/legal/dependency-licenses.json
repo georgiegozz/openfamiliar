@@ -581,6 +581,11 @@
       "license": "Apache-2.0"
     },
     {
+      "name": "familiar-anthropic",
+      "version": "0.1.0",
+      "license": "Apache-2.0"
+    },
+    {
       "name": "familiar-cli",
       "version": "0.1.0",
       "license": "Apache-2.0"

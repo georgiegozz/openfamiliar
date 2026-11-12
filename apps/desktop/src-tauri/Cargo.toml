@@ -22,6 +22,7 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 familiar-cli = { path = "../../../tools/familiar-cli" }
 familiar-credentials = { path = "../../../crates/familiar-credentials" }
+familiar-anthropic = { path = "../../../crates/familiar-anthropic", features = ["http"] }
 base64 = "=0.22.1"
 
 [lib]
