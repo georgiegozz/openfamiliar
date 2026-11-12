@@ -81,7 +81,6 @@ pub fn decode_limits() -> Limits {
     limits
 }
 
-
 const PNG_SIGNATURE: &[u8] = &[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
 /// Reject PNGs whose IHDR already declares dimensions beyond our strict Limits
@@ -168,18 +167,14 @@ pub fn peek_dimensions(bytes: &[u8]) -> Result<(u32, u32), PixelError> {
 fn resize_for_layout(image: DynamicImage, layout: Layout) -> RgbaImage {
     let rgba = image.to_rgba8();
     match layout {
-        Layout::ContactSheet => image::imageops::resize(
-            &rgba,
-            SHEET_SIZE,
-            SHEET_SIZE,
-            FilterType::Nearest,
-        ),
+        Layout::ContactSheet => {
+            image::imageops::resize(&rgba, SHEET_SIZE, SHEET_SIZE, FilterType::Nearest)
+        }
         Layout::SingleFrame => {
             image::imageops::resize(&rgba, FRAME_SIZE, FRAME_SIZE, FilterType::Nearest)
         }
         Layout::TiledMascot => {
-            let frame =
-                image::imageops::resize(&rgba, FRAME_SIZE, FRAME_SIZE, FilterType::Nearest);
+            let frame = image::imageops::resize(&rgba, FRAME_SIZE, FRAME_SIZE, FilterType::Nearest);
             let mut sheet = RgbaImage::new(SHEET_SIZE, SHEET_SIZE);
             for row in 0..SHEET_ROWS {
                 for col in 0..SHEET_COLUMNS {
