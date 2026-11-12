@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
@@ -486,7 +486,6 @@ pub fn default_import_colors() -> u32 {
     DEFAULT_COLORS
 }
 
-
 pub const BUNDLED_MASCOT_ID: &str = "perrito-tech";
 pub const MAX_IMPORT_BYTES: usize = familiar_pixel::MAX_INPUT_BYTES;
 
@@ -528,12 +527,18 @@ pub fn assert_path_inside(root: &Path, candidate: &Path) -> Result<PathBuf> {
     let cand_canon = if candidate.exists() {
         fs::canonicalize(candidate)?
     } else {
-        let parent = candidate.parent().ok_or_else(|| anyhow::anyhow!("invalid path"))?;
+        let parent = candidate
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("invalid path"))?;
         if !parent.exists() {
             fs::create_dir_all(parent)?;
         }
         let parent_canon = fs::canonicalize(parent)?;
-        parent_canon.join(candidate.file_name().ok_or_else(|| anyhow::anyhow!("invalid path"))?)
+        parent_canon.join(
+            candidate
+                .file_name()
+                .ok_or_else(|| anyhow::anyhow!("invalid path"))?,
+        )
     };
     if !cand_canon.starts_with(&root_canon) {
         bail!(
@@ -553,8 +558,7 @@ fn unique_slug(root: &Path, desired: &str) -> Result<String> {
     if base != BUNDLED_MASCOT_ID && !root.join(&base).exists() {
         return Ok(base);
     }
-    let start = if base == BUNDLED_MASCOT_ID { 2 } else { 2 };
-    for i in start..1000 {
+    for i in 2..1000 {
         let candidate = format!("{base}-{i}");
         if !root.join(&candidate).exists() {
             return Ok(candidate);
@@ -589,7 +593,11 @@ pub fn list_local_mascots(root: &Path) -> Result<Vec<LocalMascotInfo>> {
             continue;
         }
         match validate_pack(&path) {
-            Ok(report) if report.ok && is_valid_slug(&report.id) && path.file_name().and_then(|s| s.to_str()) == Some(report.id.as_str()) => {
+            Ok(report)
+                if report.ok
+                    && is_valid_slug(&report.id)
+                    && path.file_name().and_then(|s| s.to_str()) == Some(report.id.as_str()) =>
+            {
                 out.push(LocalMascotInfo {
                     id: report.id,
                     name: report.name,
@@ -647,11 +655,17 @@ pub fn import_bytes_as_local_mascot(
         let mut manifest: FamiliarManifest = serde_json::from_str(&raw)?;
         manifest.id = slug.clone();
         manifest.name = suggested_name.to_string();
-        fs::write(&manifest_path, serde_json::to_string_pretty(&manifest)? + "\n")?;
+        fs::write(
+            &manifest_path,
+            serde_json::to_string_pretty(&manifest)? + "\n",
+        )?;
         let report = validate_pack(&dest)?;
         if !report.ok {
             let _ = fs::remove_dir_all(&dest);
-            bail!("imported pack failed validation after id fix: {:?}", report.errors);
+            bail!(
+                "imported pack failed validation after id fix: {:?}",
+                report.errors
+            );
         }
         return Ok(LocalMascotInfo {
             id: slug,
@@ -698,7 +712,6 @@ pub fn read_validated_sheet(mascots_root: &Path, id: &str) -> Result<Vec<u8>> {
     let sheet = assert_path_inside(&dest, &dest.join(rel))?;
     Ok(fs::read(sheet)?)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -859,12 +872,7 @@ mod tests {
         assert_eq!(listed[0].id, info.id);
         let png = read_validated_sheet(&root, &info.id).unwrap();
         assert!(png.starts_with(b"\x89PNG"));
-        let escaped = import_bytes_as_local_mascot(
-            &root,
-            "..",
-            &tiny_png(),
-            16,
-        );
+        let escaped = import_bytes_as_local_mascot(&root, "..", &tiny_png(), 16);
         assert!(escaped.is_err());
     }
 
@@ -877,5 +885,4 @@ mod tests {
         let err = assert_path_inside(&root, &outside).unwrap_err();
         assert!(err.to_string().contains("escapes"));
     }
-
 }
