@@ -79,6 +79,7 @@ pub struct AppPreferences {
     pub timeout_seconds: u64,
     pub active_mascot_id: String,
     pub active_provider_id: String,
+    pub anthropic_model: String,
 }
 
 impl Default for AppPreferences {
@@ -97,6 +98,7 @@ impl Default for AppPreferences {
             timeout_seconds: 120,
             active_mascot_id: "perrito-tech".to_string(),
             active_provider_id: "codex".to_string(),
+            anthropic_model: "claude-sonnet-4-5".to_string(),
         }
     }
 }
@@ -131,6 +133,12 @@ impl AppPreferences {
             provider.to_string()
         } else {
             "codex".to_string()
+        };
+        let model = self.anthropic_model.trim();
+        self.anthropic_model = if model.is_empty() || model.len() > 80 || !model.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.') {
+            "claude-sonnet-4-5".to_string()
+        } else {
+            model.to_string()
         };
         self
     }

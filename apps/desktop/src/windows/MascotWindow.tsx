@@ -136,7 +136,7 @@ export function MascotWindow() {
     const requestId = createRequestId();
     dispatch({ type: "submit", requestId });
     try {
-      const result = await backend.askCodex({
+      const result = await backend.askOneShot({
         requestId,
         prompt,
         timeoutSeconds: preferences.timeoutSeconds,

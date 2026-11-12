@@ -1,6 +1,6 @@
 use crate::domain::{
     AppPreferences, CommandError, ErrorKind, OneShotRequest, OneShotResult, ProviderStatus,
-    SavedPosition,
+    SavedPosition, MAX_PROMPT_CHARS, MAX_RESPONSE_BYTES, MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS,
 };
 use crate::services::monitor_position::restore_mascot_position;
 use crate::AppState;
@@ -666,6 +666,61 @@ pub fn delete_provider_secret(
         configured: false,
     })
 }
+
+
+
+fn map_anthropic_error(error: familiar_anthropic::AnthropicError) -> CommandError {
+    let kind = match error {
+        familiar_anthropic::AnthropicError::NotAuthenticated => ErrorKind::NotAuthenticated,
+        familiar_anthropic::AnthropicError::RateLimit => ErrorKind::RateLimit,
+        familiar_anthropic::AnthropicError::Timeout => ErrorKind::Timeout,
+        familiar_anthropic::AnthropicError::Cancelled => ErrorKind::Cancelled,
+        familiar_anthropic::AnthropicError::InvalidRequest => ErrorKind::InvalidRequest,
+        familiar_anthropic::AnthropicError::OutputTooLarge => ErrorKind::OutputTooLarge,
+        familiar_anthropic::AnthropicError::InvalidOutput => ErrorKind::InvalidOutput,
+        familiar_anthropic::AnthropicError::ProcessFailed => ErrorKind::ProcessFailed,
+    };
+    CommandError::new(kind, familiar_anthropic::public_error_message(&error))
+}
+
+#[tauri::command]
+pub async fn ask_one_shot(
+    state: State<'_, AppState>,
+    request: OneShotRequest,
+) -> Result<OneShotResult, CommandError> {
+    let preferences = state.preferences.get();
+    if preferences.active_provider_id != "anthropic" {
+        return state
+            .codex
+            .ask(request, preferences.codex_path.as_deref())
+            .await;
+    }
+    if request.prompt.trim().is_empty() || request.prompt.chars().count() > MAX_PROMPT_CHARS {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            "prompt is empty or too long",
+        ));
+    }
+    let timeout_seconds = request
+        .timeout_seconds
+        .clamp(MIN_TIMEOUT_SECONDS, MAX_TIMEOUT_SECONDS);
+    let result = familiar_anthropic::complete_one_shot_reqwest(
+        &state.credentials,
+        familiar_anthropic::AnthropicRequest {
+            prompt: request.prompt,
+            model: preferences.anthropic_model,
+            timeout: std::time::Duration::from_secs(timeout_seconds),
+            max_response_bytes: MAX_RESPONSE_BYTES,
+        },
+    )
+    .await
+    .map_err(map_anthropic_error)?;
+    Ok(OneShotResult {
+        request_id: request.request_id,
+        answer: result.text,
+    })
+}
+
 
 #[cfg(test)]
 mod tests {
