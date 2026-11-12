@@ -1,0 +1,47 @@
+# Custom structural rules plus a narrow allowlist for one fictional test vector.
+# Default gitleaks rules are inherited. Do not add real credentials here.
+
+title = "OpenFamiliar"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "subscription-guid"
+description = "Subscription GUID with subscription context (bare UUIDs are ignored)"
+regex = '''(?i)(?:[/\\]subscriptions[/\\]|(?:^|[^A-Za-z0-9_])subscriptions?[/\\=:]\s*|(?:^|[^A-Za-z0-9_])subscriptions?\s*[/\\=:]\s*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
+keywords = [
+    "subscription",
+    "subscriptions",
+]
+
+[[rules]]
+id = "windows-user-path"
+description = "Windows user profile path"
+regex = '''(?i)C:(?:\\+|/)Users(?:\\+|/)([^\s\\/:*?"<>|]+)'''
+secretGroup = 1
+keywords = [
+    "users",
+]
+    [[rules.allowlists]]
+    description = "Well-known generic Windows profiles"
+    regexTarget = "secret"
+    regexes = [
+      '''(?i)^(Public|Default|Default User|DefaultUser0|DefaultAccount|All Users|WDAGUtilityAccount)$''',
+    ]
+
+# Inherit the default generic-api-key rule and allow only the fictional
+# provider-shaped strings used to unit-test redact_secrets, in that file.
+[[rules]]
+id = "generic-api-key"
+    [[rules.allowlists]]
+    description = "Fictional strings used to unit-test redact_secrets"
+    condition = "AND"
+    regexTarget = "secret"
+    paths = [
+      '''crates/familiar-storage/src/lib\.rs''',
+    ]
+    regexes = [
+      '''AIzaSyB1234567890abc''',
+      '''sk-abcdefghijklmnop''',
+    ]

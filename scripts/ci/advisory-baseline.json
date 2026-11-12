@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "policy": "Known IDs are printed on every CI run and are not a silent ignore. The job fails on a new ID, an expired entry (the grace period has ended), or an entry that is no longer reported. expiresOn values are a 90-day grace from 2026-11-12 (2027-02-10). All entries are linked to the tracking issue https://github.com/georgiegozz/openfamiliar/issues/31 in the issue field.",
+  "recordedOn": "2026-11-12",
+  "rust": [
+    {
+      "id": "RUSTSEC-2026-0459",
+      "kind": "vulnerability",
+      "package": "libsqlite3-sys",
+      "version": "0.30.1",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0342",
+      "kind": "vulnerability",
+      "package": "quinn-proto",
+      "version": "0.11.16",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Reported by cargo-audit on Cargo.lock; not in the default cargo-deny graph (optional quinn via reqwest)."
+    },
+    {
+      "id": "RUSTSEC-2026-0341",
+      "kind": "vulnerability",
+      "package": "quinn-proto",
+      "version": "0.11.16",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Reported by cargo-audit on Cargo.lock; not in the default cargo-deny graph (optional quinn via reqwest)."
+    },
+    {
+      "id": "RUSTSEC-2026-0338",
+      "kind": "vulnerability",
+      "package": "quinn-proto",
+      "version": "0.11.16",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Reported by cargo-audit on Cargo.lock; not in the default cargo-deny graph (optional quinn via reqwest)."
+    },
+    {
+      "id": "RUSTSEC-2026-0339",
+      "kind": "vulnerability",
+      "package": "quinn-proto",
+      "version": "0.11.16",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Reported by cargo-audit on Cargo.lock; not in the default cargo-deny graph (optional quinn via reqwest)."
+    },
+    {
+      "id": "RUSTSEC-2026-0340",
+      "kind": "vulnerability",
+      "package": "quinn-proto",
+      "version": "0.11.16",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Reported by cargo-audit on Cargo.lock; not in the default cargo-deny graph (optional quinn via reqwest)."
+    },
+    {
+      "id": "RUSTSEC-2026-0349",
+      "kind": "vulnerability",
+      "package": "rustls",
+      "version": "0.23.41",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0348",
+      "kind": "vulnerability",
+      "package": "rustls",
+      "version": "0.23.41",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0346",
+      "kind": "vulnerability",
+      "package": "rustls",
+      "version": "0.23.41",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0285",
+      "kind": "vulnerability",
+      "package": "rustls",
+      "version": "0.23.41",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0382",
+      "kind": "vulnerability",
+      "package": "rustls-webpki",
+      "version": "0.103.13",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0381",
+      "kind": "vulnerability",
+      "package": "webpki-roots",
+      "version": "1.0.8",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0369",
+      "kind": "vulnerability",
+      "package": "zip",
+      "version": "2.4.2",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0368",
+      "kind": "vulnerability",
+      "package": "zip",
+      "version": "2.4.2",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0429",
+      "kind": "vulnerability",
+      "package": "zip",
+      "version": "2.4.2",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0367",
+      "kind": "vulnerability",
+      "package": "zip",
+      "version": "2.4.2",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0391",
+      "kind": "vulnerability",
+      "package": "zstd",
+      "version": "0.13.3",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0398",
+      "kind": "vulnerability",
+      "package": "zstd-safe",
+      "version": "7.2.4",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0403",
+      "kind": "vulnerability",
+      "package": "zstd-safe",
+      "version": "7.2.4",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0410",
+      "kind": "vulnerability",
+      "package": "zstd-sys",
+      "version": "2.0.16+zstd.1.5.7",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph."
+    },
+    {
+      "id": "RUSTSEC-2026-0386",
+      "kind": "unsound",
+      "package": "tokio",
+      "version": "1.52.3",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31",
+      "note": "cargo-audit reports this as a warning; cargo-deny 0.20 treats unsound as an error on the used graph."
+    }
+  ],
+  "javascript": [
+    {
+      "id": "GHSA-28wg-ghj8-5hjv",
+      "kind": "high",
+      "package": "nanoid",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+    },
+    {
+      "id": "GHSA-2v37-7h3g-55p8",
+      "kind": "high",
+      "package": "nanoid",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+    },
+    {
+      "id": "GHSA-r28c-9q8g-f849",
+      "kind": "high",
+      "package": "postcss",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+    },
+    {
+      "id": "GHSA-c83g-rgw3-j3cx",
+      "kind": "high",
+      "package": "browserslist",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+    },
+    {
+      "id": "GHSA-73wf-gq98-2v4g",
+      "kind": "high",
+      "package": "browserslist",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+    },
+    {
+      "id": "GHSA-68fv-2mgg-jv7q",
+      "kind": "high",
+      "package": "source-map-js",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+    },
+    {
+      "id": "GHSA-587h-7wmj-h5pm",
+      "kind": "high",
+      "package": "vite",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+    }
+  ],
+  "trackingIssue": "https://github.com/georgiegozz/openfamiliar/issues/31"
+}
