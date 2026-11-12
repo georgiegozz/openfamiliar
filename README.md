@@ -81,8 +81,9 @@ packages/provider-sdk/     one-shot provider contract + experimental contract
 mascots/perrito-tech/      canonical spritesheet, manifest, and art license
 crates/                    experimental/future shared Rust services
 adapters/                  experimental/future provider and CLI scaffolds
-docs/                      ADRs, playbooks, security, testing, and guides
-.agents/skills/            repo-local Codex skills
+docs/                      ADRs, architecture map, verification, playbooks, security, testing, and guides
+docs/development/          local and CI verification, including the license inventory
+.agents/skills/            repo-local reusable skills
 ```
 
 ## Prerequisites
@@ -130,6 +131,8 @@ cargo test --workspace
 pnpm validate:packs
 pnpm licenses:audit
 ```
+
+See [verification.md](./docs/development/verification.md) for the full Windows and Linux notes and for what each CI job runs.
 
 ## Build Windows Installers
 

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Agent workflow documentation: module and crate map, local and CI
+  verification (including the Windows license-inventory sort order), a pull
+  request checklist, repo skills for adding a provider, adding a mascot pack,
+  and fixing the license inventory, and proposed
+  [ADR-010](docs/adr/ADR-010-additional-one-shot-providers.md) for additional
+  one-shot providers
+
 - Original, happy, collar-free dark-brindle Perrito Tech spritesheet based on
   operator-owned dog references, with deterministic teal, midnight, and burgundy
   variants limited to small state-prop accents
