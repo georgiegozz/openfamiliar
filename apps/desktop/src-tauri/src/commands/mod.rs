@@ -583,8 +583,6 @@ pub fn get_editor_mascot(
     })
 }
 
-
-
 const SETTINGS_WINDOW_LABEL: &str = "settings";
 
 fn require_settings_window_label(label: &str) -> Result<(), CommandError> {
@@ -668,7 +666,6 @@ pub fn delete_provider_secret(
         configured: false,
     })
 }
-
 
 #[cfg(test)]
 mod tests {
