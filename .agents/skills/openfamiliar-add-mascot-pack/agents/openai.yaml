@@ -1,0 +1,5 @@
+interface:
+  display_name: "OpenFamiliar Add Mascot Pack"
+  short_description: "Add or validate a familiar pack"
+  brand_color: "#43D7B0"
+  default_prompt: "Use $openfamiliar-add-mascot-pack to add or validate a mascot pack."

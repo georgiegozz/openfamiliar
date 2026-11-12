@@ -16,6 +16,11 @@ Thanks for your interest in contributing.
 
 ## Development setup
 
+Local and CI commands, including how to regenerate the license inventory on
+Windows, are in [docs/development/verification.md](./docs/development/verification.md).
+The pull request checklist lives in `.github/PULL_REQUEST_TEMPLATE.md`.
+Agent rules and the module map start at [AGENTS.md](./AGENTS.md).
+
 ```powershell
 corepack prepare pnpm@9.15.0 --activate
 pnpm install --frozen-lockfile
