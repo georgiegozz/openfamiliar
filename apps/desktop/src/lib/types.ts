@@ -76,3 +76,19 @@ export interface LocalMascotRuntime {
   rows: number;
   animations: Record<string, { frames: number[]; fps: number; loop: boolean }>;
 }
+
+export interface EditorMascot {
+  runtime: LocalMascotRuntime;
+  license: string;
+  personality: string;
+}
+
+export interface EditorSaveRequest {
+  existingId?: string;
+  name: string;
+  license: string;
+  personality: string;
+  data: number[];
+  fps: number;
+  animations: Record<string, { frames: number[]; fps: number; loop: boolean }>;
+}

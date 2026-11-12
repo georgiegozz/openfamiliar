@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { AvatarEditor } from "../features/mascot-editor/AvatarEditor";
 import { backend, isTauri, normalizeBackendError } from "../lib/backend";
 import {
   BUNDLED_MASCOT_ID,
@@ -321,6 +322,17 @@ export function SettingsWindow() {
               description="Mantiene poses estáticas aunque las animaciones estén activadas."
               checked={preferences.reduceMotion}
               onChange={(value) => update("reduceMotion", value)}
+            />
+            <AvatarEditor
+              localMascots={localMascots}
+              onSaved={(info) => {
+                void backend.listLocalMascots().then(setLocalMascots);
+                setPreferences((current) => ({
+                  ...current,
+                  activeMascotId: info.id,
+                }));
+              }}
+              onNotice={setNotice}
             />
           </div>
         ) : null}
