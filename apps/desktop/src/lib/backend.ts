@@ -7,6 +7,7 @@ import type {
   LocalMascotRuntime,
   OneShotRequest,
   OneShotResult,
+  ProviderSecretStatus,
   ProviderStatus,
 } from "./types";
 import { DEFAULT_PREFERENCES } from "./types";
@@ -64,6 +65,18 @@ export const backend = {
     invokeBackend<LocalMascotInfo>("save_editor_mascot", { request }),
   getEditorMascot: (id: string) =>
     invokeBackend<EditorMascot>("get_editor_mascot", { id }),
+  setProviderSecret: (providerId: string, secret: string) =>
+    invokeBackend<ProviderSecretStatus>("set_provider_secret", {
+      request: { providerId, secret },
+    }),
+  providerSecretConfigured: (providerId: string) =>
+    invokeBackend<ProviderSecretStatus>("provider_secret_configured", {
+      providerId,
+    }),
+  deleteProviderSecret: (providerId: string) =>
+    invokeBackend<ProviderSecretStatus>("delete_provider_secret", {
+      providerId,
+    }),
 };
 
 export function normalizeBackendError(error: unknown): BackendError {
@@ -117,6 +130,10 @@ async function mockInvoke<T>(
       return { id: "preview-mascot", name: "Preview" } as T;
     case "get_editor_mascot":
       throw new Error("Browser preview has no editor pack.");
+    case "set_provider_secret":
+    case "provider_secret_configured":
+    case "delete_provider_secret":
+      return { providerId: "anthropic", configured: false } as T;
     case "detect_codex":
       return {
         installed: false,

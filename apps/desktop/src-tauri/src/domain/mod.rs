@@ -78,6 +78,7 @@ pub struct AppPreferences {
     pub codex_path: Option<String>,
     pub timeout_seconds: u64,
     pub active_mascot_id: String,
+    pub active_provider_id: String,
 }
 
 impl Default for AppPreferences {
@@ -95,6 +96,7 @@ impl Default for AppPreferences {
             codex_path: None,
             timeout_seconds: 120,
             active_mascot_id: "perrito-tech".to_string(),
+            active_provider_id: "codex".to_string(),
         }
     }
 }
@@ -123,6 +125,12 @@ impl AppPreferences {
             id.to_string()
         } else {
             "perrito-tech".to_string()
+        };
+        let provider = self.active_provider_id.trim();
+        self.active_provider_id = if familiar_credentials::is_allowed_provider(provider) {
+            provider.to_string()
+        } else {
+            "codex".to_string()
         };
         self
     }

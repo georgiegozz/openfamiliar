@@ -1,0 +1,14 @@
+[package]
+name = "familiar-credentials"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "OS keychain helpers and an in-memory mock for the stable desktop"
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+keyring = { workspace = true }
+regex = { workspace = true }
+thiserror = { workspace = true }

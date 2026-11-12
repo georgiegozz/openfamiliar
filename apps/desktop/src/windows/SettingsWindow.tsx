@@ -6,12 +6,14 @@ import {
   DEFAULT_PREFERENCES,
   type AppPreferences,
   type LocalMascotInfo,
+  type ProviderId,
   type ProviderStatus,
 } from "../lib/types";
 
 const TABS = [
   "General",
   "Codex",
+  "Proveedores",
   "Apariencia",
   "Comportamiento",
   "Privacidad",
@@ -28,6 +30,8 @@ export function SettingsWindow() {
   const [busy, setBusy] = useState(false);
   const [localMascots, setLocalMascots] = useState<LocalMascotInfo[]>([]);
   const [importError, setImportError] = useState("");
+  const [secretDraft, setSecretDraft] = useState("");
+  const [anthropicConfigured, setAnthropicConfigured] = useState(false);
 
   const providerLabel = useMemo(() => {
     if (!provider) return "Sin comprobar";
@@ -194,6 +198,95 @@ export function SettingsWindow() {
             >
               Comprobar de nuevo
             </button>
+          </div>
+        ) : null}
+
+        {tab === "Proveedores" ? (
+          <div className="settings-section">
+            <label className="settings-field">
+              <span>Proveedor one-shot activo</span>
+              <select
+                value={preferences.activeProviderId}
+                onChange={(event) =>
+                  update("activeProviderId", event.target.value as ProviderId)
+                }
+              >
+                <option value="codex">Codex CLI</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="opencode">OpenCode CLI</option>
+                <option value="agy">Antigravity CLI</option>
+              </select>
+              <small>
+                Codex, OpenCode y Antigravity usan la sesión de su propio CLI.
+                Anthropic guarda la API key solo en el almacén de credenciales
+                del sistema, nunca en preferences.json.
+              </small>
+            </label>
+            <label className="settings-field">
+              <span>API key de Anthropic</span>
+              <input
+                type="password"
+                autoComplete="off"
+                value={secretDraft}
+                placeholder={
+                  anthropicConfigured
+                    ? "Configurada en el llavero del sistema"
+                    : "Se envía a Rust y se borra de esta ventana"
+                }
+                onChange={(event) => setSecretDraft(event.target.value)}
+              />
+              <small>
+                Estado:{" "}
+                {anthropicConfigured ? "sí, configurada" : "no configurada"}.
+                Tras guardar, el valor desaparece de la interfaz y no vuelve por
+                IPC.
+              </small>
+            </label>
+            <div className="avatar-tools">
+              <button
+                type="button"
+                className="primary-button"
+                disabled={busy || secretDraft.trim().length === 0}
+                onClick={() => {
+                  const secret = secretDraft;
+                  setSecretDraft("");
+                  setBusy(true);
+                  void backend
+                    .setProviderSecret("anthropic", secret)
+                    .then((status) => {
+                      setAnthropicConfigured(status.configured);
+                      setNotice("La key quedó en el llavero del sistema.");
+                    })
+                    .catch((error) =>
+                      setNotice(normalizeBackendError(error).message),
+                    )
+                    .finally(() => setBusy(false));
+                }}
+              >
+                Guardar en el llavero
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={busy || !anthropicConfigured}
+                onClick={() => {
+                  setBusy(true);
+                  setSecretDraft("");
+                  void backend
+                    .deleteProviderSecret("anthropic")
+                    .then((status) => {
+                      setAnthropicConfigured(status.configured);
+                      setNotice("Key eliminada del llavero.");
+                    })
+                    .catch((error) =>
+                      setNotice(normalizeBackendError(error).message),
+                    )
+                    .finally(() => setBusy(false));
+                }}
+              >
+                Eliminar key
+              </button>
+            </div>
           </div>
         ) : null}
 
