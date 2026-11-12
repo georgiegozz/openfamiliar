@@ -1,4 +1,4 @@
-//! One-shot argv and executable helpers for OpenCode and Antigravity.
+//! One-shot argv, environment, and executable helpers for OpenCode and Antigravity.
 //!
 //! Official sources consulted on 12 Nov 2026 (America/Mexico_City):
 //! - OpenCode: https://opencode.ai/docs/cli/commands/
@@ -7,20 +7,70 @@
 //!   `--password` uses the short flag `-p`; the prompt is therefore never passed
 //!   with `-p`. There is no official `--deny` CLI flag; we write a project-local
 //!   `opencode.json` in an empty temp cwd (see [`OPENCODE_DENY_CONFIG`]).
+//!   End-of-options: official `run` docs do not show `--`. Merged upstream
+//!   source PR https://github.com/anomalyco/opencode/pull/4904 documents
+//!   `opencode run -- "-hello"` so a leading-dash message is not parsed as a
+//!   flag. A later fix, https://github.com/anomalyco/opencode/pull/61721,
+//!   treats `--` as the separator (arguments after it are the message, once).
+//!   The current `run.ts` raw path returned 404 on this date, so we both insert
+//!   `--` before the prompt and reject prompts that start with `-`.
 //! - Antigravity: https://antigravity.google/docs/cli/headless/
 //!   `agy -p "<prompt>"` (`--print` / `--prompt` aliases). We use `-p` and pass
 //!   the prompt as the next, separate argument. We add official `--sandbox` and
 //!   never pass `--dangerously-skip-permissions`. In headless mode, tools that
 //!   would need an interactive approval are soft-denied by default.
+//!   Official headless and flag reference pages do not document `--` as end of
+//!   options. Flags may appear after `-p "prompt"`. Putting `--` immediately
+//!   after `-p` would likely be consumed as the prompt value, so we do not
+//!   insert it. Prompts that start with `-` (after leading whitespace, including
+//!   Unicode dashes) are rejected instead.
 //!
 //! This crate never reads the CLIs' credential stores (`auth.json`,
 //! `~/.opencode`, `~/.gemini/antigravity-cli`, etc.). Commands are built as
-//! argv arrays for `Command::new(program)` — no shell, no `cmd /c`.
+//! argv arrays for `Command::new(program)` — no shell, no `cmd /c`. Child
+//! processes receive a minimal environment allowlist; `OPENCODE_*` configuration
+//! overrides and API keys are not forwarded.
+//!
+//! OpenCode configuration precedence (cite when documenting the env filter):
+//! - V1 official docs (https://opencode.ai/docs/zh-cn/config/, still published
+//!   as V1 on 12 Nov 2026): later sources override earlier ones —
+//!   (1) remote `.well-known/opencode`, (2) global
+//!   `~/.config/opencode/opencode.json`, (3) `OPENCODE_CONFIG` custom file,
+//!   (4) project `opencode.json`, (5) `.opencode` directories,
+//!   (6) `OPENCODE_CONFIG_CONTENT` inline JSON. `OPENCODE_CONFIG_DIR` is an
+//!   extra config directory loaded after global and `.opencode` dirs.
+//! - Current English V2 docs (https://opencode.ai/docs/config/) restructure
+//!   locations (managed / system / global / project) and do not list those
+//!   env vars on that page. V2 CLI settings
+//!   (https://opencode.ai/docs/cli/config/) document
+//!   `OPENCODE_CLI_CONFIG_CONTENT` for `cli.json`.
+//! - Official source `packages/opencode/src/flag/flag.ts` reads
+//!   `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and `OPENCODE_CONFIG_CONTENT`
+//!   from the process environment.
+//!
+//! Antigravity: official settings (https://antigravity.google/docs/settings?tab=cli)
+//! persist in `~/.gemini/antigravity-cli/settings.json`. Session flags override
+//! that file; no official `AGY_CONFIG` / `ANTIGRAVITY_CONFIG` style override
+//! was documented. The allowlist still drops those names if present.
 
+use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 pub const SPECIAL_PROMPT_FIXTURE: &str = r#"reply with: " & | % and -p"#;
+
+/// Hyphen-minus plus Unicode dashes that a pasted prompt might use as a flag prefix.
+const FLAG_PREFIX_CHARS: &[char] = &[
+    '-',        // U+002D hyphen-minus
+    '\u{2010}', // hyphen
+    '\u{2011}', // non-breaking hyphen
+    '\u{2012}', // figure dash
+    '\u{2013}', // en dash
+    '\u{2014}', // em dash
+    '\u{2015}', // horizontal bar
+    '\u{2212}', // minus sign
+];
 
 /// Project-local OpenCode permission policy written into the empty temp cwd.
 /// Official `opencode run` has no deny-tools flag
@@ -39,6 +89,43 @@ pub const OPENCODE_DENY_CONFIG: &str = r#"{
   ]
 }
 "#;
+
+/// Minimal environment forwarded to a one-shot CLI child.
+///
+/// Everything else is dropped, including `OPENCODE_CONFIG`,
+/// `OPENCODE_CONFIG_CONTENT`, `OPENCODE_CONFIG_DIR`,
+/// `OPENCODE_CLI_CONFIG_CONTENT`, `OPENCODE_PERMISSION`, `OPENCODE_API_KEY`,
+/// and any other `OPENCODE_*` / API-key variables. Prefer this allowlist over
+/// a denylist so newly documented overrides are not forwarded by default.
+pub const CHILD_ENV_ALLOWLIST: &[&str] = &[
+    "PATH",
+    "PATHEXT",
+    "HOME",
+    "USERPROFILE",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "USER",
+    "USERNAME",
+    "USERDOMAIN",
+    "LOGNAME",
+    "TEMP",
+    "TMP",
+    "TMPDIR",
+    "SYSTEMROOT",
+    "WINDIR",
+    "SystemDrive",
+    "ComSpec",
+    "COMSPEC",
+    "OS",
+    "PROCESSOR_ARCHITECTURE",
+    "PROCESSOR_ARCHITEW6432",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "LC_MESSAGES",
+];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CliKind {
@@ -73,19 +160,41 @@ pub enum CliError {
     UnsafePath,
     #[error("could not prepare the empty working directory")]
     Workspace,
+    #[error("refusing a prompt that starts with '-' (it would be parsed as a CLI flag)")]
+    PromptLooksLikeFlag,
+}
+
+/// True when, after leading whitespace, the prompt starts with `-` or a
+/// Unicode dash in U+2010..=U+2015 or U+2212.
+pub fn prompt_looks_like_flag(prompt: &str) -> bool {
+    prompt
+        .trim_start()
+        .starts_with(|c: char| FLAG_PREFIX_CHARS.contains(&c))
 }
 
 /// Build argv (without the program name) for a one-shot question.
 /// The prompt is always a single argument, including when it contains
 /// `"`, `&`, `|`, `%`, or `-p`.
-pub fn one_shot_args(kind: CliKind, prompt: &str) -> Vec<String> {
+///
+/// Prompts that look like flags are rejected. For OpenCode, `--` is inserted
+/// before the prompt so a future caller that skips the reject still has an
+/// end-of-options marker. For Antigravity, `--` is not inserted: official
+/// docs do not document it, and `-p` takes the next argument as the prompt.
+pub fn one_shot_args(kind: CliKind, prompt: &str) -> Result<Vec<String>, CliError> {
+    if prompt_looks_like_flag(prompt) {
+        return Err(CliError::PromptLooksLikeFlag);
+    }
     match kind {
-        CliKind::OpenCode => vec!["run".to_string(), prompt.to_string()],
-        CliKind::Antigravity => vec![
+        CliKind::OpenCode => Ok(vec![
+            "run".to_string(),
+            "--".to_string(),
+            prompt.to_string(),
+        ]),
+        CliKind::Antigravity => Ok(vec![
             "--sandbox".to_string(),
             "-p".to_string(),
             prompt.to_string(),
-        ],
+        ]),
     }
 }
 
@@ -98,6 +207,42 @@ pub fn args_are_safe(args: &[String]) -> bool {
             || arg.eq_ignore_ascii_case("cmd")
             || arg.eq_ignore_ascii_case("cmd.exe")
     })
+}
+
+/// True when `key` is in [`CHILD_ENV_ALLOWLIST`] (ASCII case-insensitive, so
+/// Windows `Path` / `SystemRoot` variants match).
+pub fn is_allowed_child_env_key(key: &OsStr) -> bool {
+    let Some(key) = key.to_str() else {
+        return false;
+    };
+    CHILD_ENV_ALLOWLIST
+        .iter()
+        .any(|allowed| key.eq_ignore_ascii_case(allowed))
+}
+
+/// Filter an environment map down to the child allowlist.
+pub fn allowed_child_env_from<I, K, V>(vars: I) -> Vec<(OsString, OsString)>
+where
+    I: IntoIterator<Item = (K, V)>,
+    K: AsRef<OsStr>,
+    V: AsRef<OsStr>,
+{
+    vars.into_iter()
+        .filter(|(key, _)| is_allowed_child_env_key(key.as_ref()))
+        .map(|(key, value)| (key.as_ref().to_os_string(), value.as_ref().to_os_string()))
+        .collect()
+}
+
+pub fn allowed_child_env() -> Vec<(OsString, OsString)> {
+    allowed_child_env_from(std::env::vars_os())
+}
+
+/// Clear the child environment and copy only the allowlist from this process.
+pub fn apply_child_env(command: &mut Command) {
+    command.env_clear();
+    for (key, value) in allowed_child_env() {
+        command.env(key, value);
+    }
 }
 
 pub fn is_script_wrapper(path: &Path) -> bool {
@@ -227,29 +372,96 @@ mod tests {
     use std::process::Command;
     use tempfile::tempdir;
 
+    const LEADING_FLAG_PROMPTS: &[&str] = &[
+        "-x",
+        "--flag=valor",
+        "--dangerously-skip-permissions=true",
+        "--model foo",
+        "   -x",
+    ];
+
+    fn compile_fixture(dir: &Path, name: &str, source: &str) -> PathBuf {
+        let src = dir.join(format!("{name}.rs"));
+        fs::write(&src, source).unwrap();
+        let exe = dir.join(format!("{name}{}", std::env::consts::EXE_SUFFIX));
+        let rustc = std::env::var_os("CARGO")
+            .map(PathBuf::from)
+            .and_then(|p| p.parent().map(|parent| parent.join("rustc")));
+        let rustc = rustc
+            .filter(|p| p.exists())
+            .unwrap_or_else(|| PathBuf::from("rustc"));
+        let status = Command::new(rustc)
+            .arg(&src)
+            .arg("-o")
+            .arg(&exe)
+            .status()
+            .expect("rustc");
+        assert!(status.success(), "failed to compile {name} fixture");
+        exe
+    }
+
     #[test]
     fn opencode_prompt_with_special_chars_is_a_single_argument() {
-        let args = one_shot_args(CliKind::OpenCode, SPECIAL_PROMPT_FIXTURE);
+        let args = one_shot_args(CliKind::OpenCode, SPECIAL_PROMPT_FIXTURE).unwrap();
         assert_eq!(args[0], "run");
-        assert_eq!(args[1], SPECIAL_PROMPT_FIXTURE);
-        assert_eq!(args.len(), 2);
+        assert_eq!(args[1], "--");
+        assert_eq!(args[2], SPECIAL_PROMPT_FIXTURE);
+        assert_eq!(args.len(), 3);
         assert!(args_are_safe(&args));
         assert!(!args.contains(&"-p".to_string()));
         assert!(!args.contains(&"--auto".to_string()));
         assert!(!args.contains(&"--dangerously-skip-permissions".to_string()));
+        let end = args.iter().position(|arg| arg == "--").unwrap();
+        assert_eq!(args[end + 1], SPECIAL_PROMPT_FIXTURE);
     }
 
     #[test]
     fn agy_prompt_with_special_chars_is_a_single_argument_after_dash_p() {
-        let args = one_shot_args(CliKind::Antigravity, SPECIAL_PROMPT_FIXTURE);
+        let args = one_shot_args(CliKind::Antigravity, SPECIAL_PROMPT_FIXTURE).unwrap();
         assert_eq!(args[0], "--sandbox");
         assert_eq!(args[1], "-p");
         assert_eq!(args[2], SPECIAL_PROMPT_FIXTURE);
+        assert!(!args.contains(&"--".to_string()));
         assert!(args.contains(&"--sandbox".to_string()));
         assert!(args_are_safe(&args));
         assert!(!args.contains(&"--dangerously-skip-permissions".to_string()));
         // The prompt itself may contain the text -p, but it is not a flag.
         assert_eq!(args.iter().filter(|arg| *arg == "-p").count(), 1);
+    }
+
+    #[test]
+    fn one_shot_args_rejects_prompts_that_look_like_flags() {
+        for prompt in LEADING_FLAG_PROMPTS {
+            for kind in [CliKind::OpenCode, CliKind::Antigravity] {
+                assert_eq!(
+                    one_shot_args(kind, prompt).unwrap_err(),
+                    CliError::PromptLooksLikeFlag,
+                    "{kind:?} {prompt:?} must not reach the CLI as a flag"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn unicode_dash_prompts_are_rejected_after_leading_whitespace() {
+        for dash in [
+            '\u{2010}', '\u{2011}', '\u{2012}', '\u{2013}', '\u{2014}', '\u{2015}', '\u{2212}',
+        ] {
+            let prompt = format!("{dash}x");
+            let padded = format!("  {prompt}");
+            for kind in [CliKind::OpenCode, CliKind::Antigravity] {
+                assert_eq!(
+                    one_shot_args(kind, &prompt).unwrap_err(),
+                    CliError::PromptLooksLikeFlag,
+                    "{kind:?} {prompt:?}"
+                );
+                assert_eq!(
+                    one_shot_args(kind, &padded).unwrap_err(),
+                    CliError::PromptLooksLikeFlag,
+                    "{kind:?} {padded:?}"
+                );
+            }
+        }
     }
 
     #[test]
@@ -318,34 +530,17 @@ mod tests {
     #[test]
     fn spawn_without_shell_keeps_the_special_prompt_intact() {
         let dir = tempdir().unwrap();
-        let src = dir.path().join("echo_args.rs");
-        fs::write(
-            &src,
+        let exe = compile_fixture(
+            dir.path(),
+            "agy",
             r#"
             fn main() {
                 let args: Vec<String> = std::env::args().skip(1).collect();
                 print!("{}", args.join("\u{1f}"));
             }
             "#,
-        )
-        .unwrap();
-        let exe = dir
-            .path()
-            .join(format!("agy{}", std::env::consts::EXE_SUFFIX));
-        let rustc = std::env::var_os("CARGO")
-            .map(PathBuf::from)
-            .and_then(|p| p.parent().map(|parent| parent.join("rustc")));
-        let rustc = rustc
-            .filter(|p| p.exists())
-            .unwrap_or_else(|| PathBuf::from("rustc"));
-        let status = Command::new(rustc)
-            .arg(&src)
-            .arg("-o")
-            .arg(&exe)
-            .status()
-            .expect("rustc");
-        assert!(status.success(), "failed to compile argv echo fixture");
-        let args = one_shot_args(CliKind::Antigravity, SPECIAL_PROMPT_FIXTURE);
+        );
+        let args = one_shot_args(CliKind::Antigravity, SPECIAL_PROMPT_FIXTURE).unwrap();
         let output = Command::new(&exe)
             .args(&args)
             .output()
@@ -356,5 +551,106 @@ mod tests {
         assert_eq!(received[0], "--sandbox");
         assert_eq!(received[1], "-p");
         assert_eq!(received[2], SPECIAL_PROMPT_FIXTURE);
+    }
+
+    #[test]
+    fn child_process_does_not_receive_opencode_config_overrides() {
+        let forbidden = [
+            "OPENCODE_CONFIG",
+            "OPENCODE_CONFIG_CONTENT",
+            "OPENCODE_CONFIG_DIR",
+            "OPENCODE_CLI_CONFIG_CONTENT",
+            "OPENCODE_PERMISSION",
+            "OPENCODE_API_KEY",
+            "OPENCODE_DISABLE_PROJECT_CONFIG",
+            "ANTHROPIC_API_KEY",
+            "GEMINI_API_KEY",
+        ];
+        let mut parent_env: Vec<(OsString, OsString)> = std::env::vars_os().collect();
+        for key in forbidden {
+            parent_env.push((OsString::from(key), OsString::from("/tmp/should-not-leak")));
+        }
+
+        let filtered = allowed_child_env_from(parent_env.clone());
+        for key in forbidden {
+            assert!(
+                filtered
+                    .iter()
+                    .all(|(k, _)| !k.to_string_lossy().eq_ignore_ascii_case(key)),
+                "{key} must not be forwarded to the child"
+            );
+        }
+        assert!(
+            filtered
+                .iter()
+                .any(|(k, _)| k.to_string_lossy().eq_ignore_ascii_case("PATH")),
+            "PATH must stay on the allowlist"
+        );
+
+        let dir = tempdir().unwrap();
+        let exe = compile_fixture(
+            dir.path(),
+            "echo_env",
+            r#"
+            fn main() {
+                let mut keys: Vec<String> = std::env::vars().map(|(k, _)| k).collect();
+                keys.sort();
+                print!("{}", keys.join("\n"));
+            }
+            "#,
+        );
+        let mut command = Command::new(&exe);
+        command.env_clear();
+        for (key, value) in filtered {
+            command.env(key, value);
+        }
+        let output = command.output().expect("spawn env fixture");
+        assert!(output.status.success());
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let received: Vec<&str> = stdout.lines().collect();
+        for key in forbidden {
+            assert!(
+                !received.iter().any(|k| k.eq_ignore_ascii_case(key)),
+                "child received forbidden {key}: {stdout:?}"
+            );
+        }
+        assert!(
+            received.iter().any(|k| k.eq_ignore_ascii_case("PATH")),
+            "child must still receive PATH: {stdout:?}"
+        );
+    }
+
+    #[test]
+    fn apply_child_env_clears_overrides_on_a_real_process() {
+        let dir = tempdir().unwrap();
+        let exe = compile_fixture(
+            dir.path(),
+            "echo_env_apply",
+            r#"
+            fn main() {
+                let mut keys: Vec<String> = std::env::vars().map(|(k, _)| k).collect();
+                keys.sort();
+                print!("{}", keys.join("\n"));
+            }
+            "#,
+        );
+        let mut command = Command::new(&exe);
+        command.env("OPENCODE_CONFIG", "/tmp/should-not-leak");
+        command.env("OPENCODE_CONFIG_CONTENT", "{\"permissions\":[]}");
+        command.env("OPENCODE_CONFIG_DIR", "/tmp/should-not-leak-dir");
+        apply_child_env(&mut command);
+        let output = command.output().expect("spawn apply_child_env fixture");
+        assert!(output.status.success());
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        for key in [
+            "OPENCODE_CONFIG",
+            "OPENCODE_CONFIG_CONTENT",
+            "OPENCODE_CONFIG_DIR",
+        ] {
+            assert!(
+                !stdout.lines().any(|k| k.eq_ignore_ascii_case(key)),
+                "child received {key}: {stdout:?}"
+            );
+        }
     }
 }

@@ -4,7 +4,8 @@ use crate::domain::{
 };
 use crate::services::logging::{SafeEvent, SafeLogger};
 use familiar_oneshot_cli::{
-    find_on_path, one_shot_args, prepare_workdir, resolve_configured_path, CliError, CliKind,
+    allowed_child_env, find_on_path, one_shot_args, prepare_workdir, resolve_configured_path,
+    CliError, CliKind,
 };
 use regex::Regex;
 use std::collections::HashMap;
@@ -86,7 +87,7 @@ impl CliAgentService {
                 "No se pudo preparar el directorio de trabajo vacío.",
             )
         })?;
-        let args = one_shot_args(kind, request.prompt.trim());
+        let args = one_shot_args(kind, request.prompt.trim()).map_err(map_cli_error)?;
 
         {
             let active = self.active.lock().await;
@@ -111,7 +112,7 @@ impl CliAgentService {
             use std::os::windows::process::CommandExt;
             command.as_std_mut().creation_flags(CREATE_NO_WINDOW);
         }
-        clear_injected_secrets(&mut command);
+        apply_child_env(&mut command);
 
         let mut child = command.spawn().map_err(|_| {
             CommandError::new(
@@ -261,9 +262,14 @@ fn map_cli_error(error: CliError) -> CommandError {
             "La ruta configurada no es un ejecutable de CLI seguro.".to_string()
         }
         CliError::Workspace => "No se pudo preparar el directorio de trabajo vacío.".to_string(),
+        CliError::PromptLooksLikeFlag => {
+            "Se rechazó una pregunta que empieza con '-' (se interpretaría como una opción del CLI)."
+                .to_string()
+        }
     };
     let kind = match error {
         CliError::Workspace => ErrorKind::Unknown,
+        CliError::PromptLooksLikeFlag => ErrorKind::InvalidRequest,
         _ => ErrorKind::CodexNotInstalled,
     };
     CommandError::new(kind, message)
@@ -292,22 +298,10 @@ fn validate_request(request: &OneShotRequest) -> Result<(), CommandError> {
     Ok(())
 }
 
-fn clear_injected_secrets(command: &mut Command) {
-    for variable in [
-        "OPENAI_API_KEY",
-        "CODEX_API_KEY",
-        "AZURE_OPENAI_API_KEY",
-        "ANTHROPIC_API_KEY",
-        "GOOGLE_API_KEY",
-        "GEMINI_API_KEY",
-        "OPENROUTER_API_KEY",
-        "XAI_API_KEY",
-        "AWS_ACCESS_KEY_ID",
-        "AWS_SECRET_ACCESS_KEY",
-        "AWS_SESSION_TOKEN",
-        "OPENCODE_API_KEY",
-    ] {
-        command.env_remove(variable);
+fn apply_child_env(command: &mut Command) {
+    command.env_clear();
+    for (key, value) in allowed_child_env() {
+        command.env(key, value);
     }
 }
 
