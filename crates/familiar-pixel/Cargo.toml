@@ -1,0 +1,16 @@
+[package]
+name = "familiar-pixel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Local pixel-art quantization and spritesheet helpers"
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+image = { workspace = true }
+color_quant = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }

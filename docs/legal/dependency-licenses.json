@@ -291,6 +291,11 @@
       "license": "MIT OR Apache-2.0"
     },
     {
+      "name": "color_quant",
+      "version": "1.1.0",
+      "license": "MIT"
+    },
+    {
       "name": "colorchoice",
       "version": "1.0.5",
       "license": "MIT OR Apache-2.0"
@@ -597,6 +602,11 @@
     },
     {
       "name": "familiar-permissions",
+      "version": "0.1.0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "familiar-pixel",
       "version": "0.1.0",
       "license": "Apache-2.0"
     },
@@ -966,6 +976,11 @@
       "license": "Unlicense OR MIT"
     },
     {
+      "name": "image",
+      "version": "0.24.9",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
       "name": "indexmap",
       "version": "1.9.3",
       "license": "Apache-2.0 OR MIT"
@@ -1033,6 +1048,11 @@
     {
       "name": "jobserver",
       "version": "0.1.35",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "jpeg-decoder",
+      "version": "0.3.2",
       "license": "MIT OR Apache-2.0"
     },
     {
@@ -2643,28 +2663,18 @@
   ],
   "javascriptProduction": [
     {
-      "name": "js-tokens",
-      "version": "4.0.0",
-      "license": "MIT"
-    },
-    {
-      "name": "loose-envify",
-      "version": "1.4.0",
-      "license": "MIT"
-    },
-    {
       "name": "react",
-      "version": "18.3.1",
+      "version": "19.3.1",
       "license": "MIT"
     },
     {
       "name": "react-dom",
-      "version": "18.3.1",
+      "version": "19.3.1",
       "license": "MIT"
     },
     {
       "name": "scheduler",
-      "version": "0.23.2",
+      "version": "0.28.0",
       "license": "MIT"
     }
   ]
