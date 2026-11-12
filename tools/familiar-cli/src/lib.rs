@@ -1,0 +1,608 @@
+//! Pack tooling shared by the `familiar` CLI and the desktop app.
+
+use anyhow::{bail, Context, Result};
+use familiar_pixel::{
+    import_image, Layout, PixelOptions, DEFAULT_COLORS, MAX_COLORS, MIN_COLORS, SHEET_COLUMNS,
+    SHEET_ROWS, FRAME_SIZE,
+};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, HashSet};
+use std::fs;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
+use zip::write::SimpleFileOptions;
+use zip::ZipWriter;
+
+pub const MAX_PACK_BYTES: u64 = 50 * 1024 * 1024;
+pub const SPRITESHEET_REL: &str = "assets/spritesheet.png";
+pub const MANIFEST_NAME: &str = "familiar.json";
+pub const PERSONALITY_NAME: &str = "personality.md";
+pub const ALLOWED_EXTS: &[&str] = &[
+    "webp", "png", "jpg", "jpeg", "gif", "md", "json", "txt", "wav", "ogg", "mp3",
+];
+
+const REQUIRED_STATES: &[&str] = &[
+    "idle", "thinking", "working", "approval", "success", "error",
+];
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SpriteSheetDefinition {
+    pub asset: String,
+    pub frame_width: u32,
+    pub frame_height: u32,
+    pub columns: u32,
+    pub rows: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AnimationDefinition {
+    pub frames: Vec<u32>,
+    pub fps: f32,
+    #[serde(rename = "loop")]
+    pub loop_playback: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FamiliarManifest {
+    #[serde(rename = "$schema", skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
+    pub id: String,
+    pub name: String,
+    pub version: String,
+    pub engine: String,
+    pub author: String,
+    pub license: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub homepage: Option<String>,
+    pub personality: String,
+    pub states: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sprite_sheet: Option<SpriteSheetDefinition>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub variants: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub animations: BTreeMap<String, AnimationDefinition>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub asset_sources: Vec<String>,
+    #[serde(default)]
+    pub ai_generated: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ValidationReport {
+    pub ok: bool,
+    pub id: String,
+    pub name: String,
+    pub version: String,
+    pub license: String,
+    pub states: Vec<String>,
+    pub variants: Vec<String>,
+    pub file_hashes: Vec<(String, String)>,
+    pub warnings: Vec<String>,
+    pub errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ImportLayout {
+    ContactSheet,
+    SingleFrame,
+    TiledMascot,
+}
+
+impl ImportLayout {
+    pub fn parse(name: &str) -> Result<Self> {
+        match name {
+            "sheet" | "contact-sheet" => Ok(Self::ContactSheet),
+            "frame" => Ok(Self::SingleFrame),
+            "tiled" | "mascot" => Ok(Self::TiledMascot),
+            other => bail!("unknown layout '{other}' (use sheet, frame, or tiled)"),
+        }
+    }
+
+    fn to_pixel(self) -> Layout {
+        match self {
+            Self::ContactSheet => Layout::ContactSheet,
+            Self::SingleFrame => Layout::SingleFrame,
+            Self::TiledMascot => Layout::TiledMascot,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ImportImageRequest<'a> {
+    pub input: &'a Path,
+    pub out: &'a Path,
+    pub colors: u32,
+    pub layout: ImportLayout,
+    pub force: bool,
+    pub name: Option<&'a str>,
+    pub author: Option<&'a str>,
+    pub license: Option<&'a str>,
+}
+
+pub fn slugify(name: &str) -> Result<String> {
+    let mut out = String::new();
+    let mut dash = false;
+    for c in name.chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c.to_ascii_lowercase());
+            dash = false;
+        } else if !out.is_empty() && !dash {
+            out.push('-');
+            dash = true;
+        }
+    }
+    let out = out.trim_matches('-').to_string();
+    if out.is_empty() || out.len() > 64 || !out.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
+        bail!("invalid pack id derived from '{name}'");
+    }
+    // must match [a-z0-9]+(-[a-z0-9]+)*
+    if out.starts_with('-') || out.ends_with('-') || out.contains("--") {
+        bail!("invalid pack id '{out}'");
+    }
+    Ok(out)
+}
+
+pub fn pack_init(name: &str, path: &Path) -> Result<()> {
+    let dir = path.join(name);
+    fs::create_dir_all(dir.join("assets"))?;
+    fs::create_dir_all(dir.join("sounds"))?;
+    fs::create_dir_all(dir.join("previews"))?;
+    let id = slugify(name).unwrap_or_else(|_| "pack".into());
+    let manifest = serde_json::json!({
+        "$schema": "https://openfamiliar.dev/schema/familiar-v1.json",
+        "id": id,
+        "name": name,
+        "version": "0.1.0",
+        "engine": ">=0.1.0",
+        "author": "unknown",
+        "license": "CC0-1.0",
+        "personality": PERSONALITY_NAME,
+        "states": {
+            "idle": "assets/idle.webp",
+            "thinking": "assets/thinking.webp",
+            "working": "assets/working.webp",
+            "approval": "assets/approval.webp",
+            "success": "assets/success.webp",
+            "error": "assets/error.webp"
+        },
+        "variants": {},
+        "assetSources": [],
+        "aiGenerated": false
+    });
+    fs::write(
+        dir.join(MANIFEST_NAME),
+        serde_json::to_string_pretty(&manifest)?,
+    )?;
+    fs::write(
+        dir.join(PERSONALITY_NAME),
+        format!("# {name}\n\nA friendly desktop familiar.\n"),
+    )?;
+    fs::write(
+        dir.join("LICENSE"),
+        "CC0-1.0 — dedicate this pack's assets to the public domain as appropriate.\n",
+    )?;
+    for state in REQUIRED_STATES {
+        fs::write(
+            dir.join("assets").join(format!("{state}.webp.txt")),
+            format!("Replace with real {state}.webp asset\n"),
+        )?;
+    }
+    println!("Initialized pack at {}", dir.display());
+    Ok(())
+}
+
+pub fn validate_pack(path: &Path) -> Result<ValidationReport> {
+    let mut errors = Vec::new();
+    let mut warnings = Vec::new();
+    let manifest_path = path.join(MANIFEST_NAME);
+    if !manifest_path.exists() {
+        bail!("familiar.json missing");
+    }
+    let raw = fs::read_to_string(&manifest_path)?;
+    let manifest: FamiliarManifest = serde_json::from_str(&raw).context("parse familiar.json")?;
+
+    if manifest.id.trim().is_empty() {
+        errors.push("id is required".into());
+    }
+    if manifest.license.trim().is_empty() {
+        errors.push("license is required".into());
+        warnings.push("Unlicensed packs get NOASSERTION and cannot join gallery".into());
+    }
+    if manifest.license.eq_ignore_ascii_case("NOASSERTION") {
+        warnings.push("license is NOASSERTION — local import only".into());
+    }
+
+    let personality = path.join(&manifest.personality);
+    if !personality.exists() {
+        errors.push(format!(
+            "personality file missing: {}",
+            manifest.personality
+        ));
+    }
+
+    for s in REQUIRED_STATES {
+        if !manifest.states.contains_key(*s) {
+            errors.push(format!("missing state mapping: {s}"));
+        }
+    }
+
+    let mut hashes = Vec::new();
+    let mut total: u64 = 0;
+    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let rel = entry
+            .path()
+            .strip_prefix(path)
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "/");
+        if rel.contains("..") {
+            errors.push(format!("path traversal segment: {rel}"));
+            continue;
+        }
+        if Path::new(&rel).is_absolute() {
+            errors.push(format!("absolute path not allowed: {rel}"));
+            continue;
+        }
+        let meta = entry.metadata()?;
+        total += meta.len();
+        let ext = entry
+            .path()
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+        if entry.path().extension().is_some() && !ALLOWED_EXTS.contains(&ext.as_str()) {
+            if ext != "txt" && !rel.eq_ignore_ascii_case("license") {
+                warnings.push(format!("unexpected extension .{ext} for {rel}"));
+            }
+        }
+        if matches!(
+            ext.as_str(),
+            "exe" | "dll" | "so" | "dylib" | "bat" | "cmd" | "ps1" | "js"
+        ) {
+            errors.push(format!("executable/script not allowed in pack v1: {rel}"));
+        }
+        let mut file = fs::File::open(entry.path())?;
+        let mut hasher = Sha256::new();
+        let mut buf = [0u8; 8192];
+        loop {
+            let n = file.read(&mut buf)?;
+            if n == 0 {
+                break;
+            }
+            hasher.update(&buf[..n]);
+        }
+        hashes.push((rel, hex::encode(hasher.finalize())));
+    }
+    if total > MAX_PACK_BYTES {
+        errors.push(format!(
+            "pack exceeds size limit ({total} > {MAX_PACK_BYTES})"
+        ));
+    }
+
+    for (state, asset_rel) in &manifest.states {
+        if asset_rel.contains("..") || Path::new(asset_rel).is_absolute() {
+            errors.push(format!("invalid asset path for {state}: {asset_rel}"));
+            continue;
+        }
+        let asset_path = path.join(asset_rel);
+        if !asset_path.exists() {
+            let placeholder = path.join(format!("{asset_rel}.txt"));
+            if placeholder.exists() {
+                warnings.push(format!("state {state} uses placeholder for {asset_rel}"));
+            } else {
+                errors.push(format!("missing asset for {state}: {asset_rel}"));
+            }
+        }
+    }
+
+    for (variant, asset_rel) in &manifest.variants {
+        if asset_rel.contains("..") || Path::new(asset_rel).is_absolute() {
+            errors.push(format!(
+                "invalid asset path for variant {variant}: {asset_rel}"
+            ));
+            continue;
+        }
+        if !path.join(asset_rel).exists() {
+            errors.push(format!("missing asset for variant {variant}: {asset_rel}"));
+        }
+    }
+
+    let ok = errors.is_empty();
+    Ok(ValidationReport {
+        ok,
+        id: manifest.id,
+        name: manifest.name,
+        version: manifest.version,
+        license: manifest.license,
+        states: REQUIRED_STATES.iter().map(|s| s.to_string()).collect(),
+        variants: manifest.variants.keys().cloned().collect(),
+        file_hashes,
+        warnings,
+        errors,
+    })
+}
+
+pub fn build_pack(path: &Path, out: &Path) -> Result<()> {
+    let report = validate_pack(path)?;
+    if !report.ok {
+        bail!("validation failed: {:?}", report.errors);
+    }
+    let file = fs::File::create(out)?;
+    let mut zip = ZipWriter::new(file);
+    let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let mut seen = HashSet::new();
+    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let rel = entry
+            .path()
+            .strip_prefix(path)
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "/");
+        if !seen.insert(rel.clone()) {
+            continue;
+        }
+        zip.start_file(rel, options)?;
+        let bytes = fs::read(entry.path())?;
+        zip.write_all(&bytes)?;
+    }
+    zip.finish()?;
+    Ok(())
+}
+
+pub fn inspect_archive(path: &Path) -> Result<()> {
+    let file = fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+    println!("Archive: {} ({} files)", path.display(), archive.len());
+    for i in 0..archive.len() {
+        let f = archive.by_index(i)?;
+        println!(" - {} ({} bytes)", f.name(), f.size());
+    }
+    Ok(())
+}
+
+pub fn import_image_to_pack(req: ImportImageRequest<'_>) -> Result<ValidationReport> {
+    if !(MIN_COLORS..=MAX_COLORS).contains(&req.colors) {
+        bail!("--colors must be between {MIN_COLORS} and {MAX_COLORS}");
+    }
+    if !req.input.is_file() {
+        bail!("input image not found: {}", req.input.display());
+    }
+    if req.out.exists() && !req.force {
+        bail!(
+            "output path already exists (pass --force to overwrite): {}",
+            req.out.display()
+        );
+    }
+    let bytes = fs::read(req.input).context("read input image")?;
+    let imported = import_image(
+        &bytes,
+        PixelOptions {
+            colors: req.colors,
+            layout: req.layout.to_pixel(),
+        },
+    )
+    .map_err(|e| anyhow::anyhow!(e))?;
+
+    if req.out.exists() {
+        fs::remove_dir_all(req.out).or_else(|_| fs::remove_file(req.out))?;
+    }
+    fs::create_dir_all(req.out.join("assets"))?;
+    fs::write(req.out.join(SPRITESHEET_REL), &imported.png)?;
+
+    let fallback_name = req
+        .out
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("familiar");
+    let name = req.name.unwrap_or(fallback_name);
+    let id = slugify(name)?;
+    let author = req.author.unwrap_or("unknown");
+    let license = req.license.unwrap_or("CC0-1.0");
+
+    let mut states = BTreeMap::new();
+    let mut animations = BTreeMap::new();
+    let frame = 0u32;
+    for state in REQUIRED_STATES {
+        states.insert((*state).to_string(), SPRITESHEET_REL.to_string());
+        animations.insert(
+            (*state).to_string(),
+            AnimationDefinition {
+                frames: vec![frame],
+                fps: 1.0,
+                loop_playback: true,
+            },
+        );
+    }
+    // Single-frame layout is still stored as a 64x64 PNG named spritesheet.png
+    // so the pack has one fixed asset path. Contact/tiled layouts are 256x256.
+    let (frame_w, frame_h, columns, rows) = match req.layout {
+        ImportLayout::SingleFrame => (imported.width, imported.height, 1, 1),
+        _ => (FRAME_SIZE, FRAME_SIZE, SHEET_COLUMNS, SHEET_ROWS),
+    };
+
+    let manifest = FamiliarManifest {
+        schema: Some("https://openfamiliar.dev/schema/familiar-v1.json".into()),
+        id,
+        name: name.to_string(),
+        version: "0.1.0".into(),
+        engine: ">=0.1.0".into(),
+        author: author.to_string(),
+        license: license.to_string(),
+        homepage: None,
+        personality: PERSONALITY_NAME.into(),
+        states,
+        sprite_sheet: Some(SpriteSheetDefinition {
+            asset: SPRITESHEET_REL.into(),
+            frame_width: frame_w,
+            frame_height: frame_h,
+            columns,
+            rows,
+        }),
+        variants: BTreeMap::new(),
+        animations,
+        asset_sources: vec![format!(
+            "Imported locally from {} and quantized to a {}x{} sprite sheet.",
+            req.input
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("image"),
+            imported.width,
+            imported.height
+        )],
+        ai_generated: false,
+    };
+
+    fs::write(
+        req.out.join(MANIFEST_NAME),
+        serde_json::to_string_pretty(&manifest)? + "\n",
+    )?;
+    fs::write(
+        req.out.join(PERSONALITY_NAME),
+        format!("# {name}\n\nA friendly desktop familiar.\n"),
+    )?;
+    validate_pack(req.out)
+}
+
+pub fn default_import_colors() -> u32 {
+    DEFAULT_COLORS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::{Rgba, RgbaImage};
+    use tempfile::tempdir;
+
+    fn tiny_png() -> Vec<u8> {
+        let mut img = RgbaImage::new(16, 16);
+        for px in img.pixels_mut() {
+            *px = Rgba([40, 80, 120, 255]);
+        }
+        let mut out = Vec::new();
+        let encoder = image::codecs::png::PngEncoder::new(&mut out);
+        img.write_with_encoder(encoder).unwrap();
+        out
+    }
+
+    #[test]
+    fn init_and_validate_warns_placeholders() {
+        let dir = tempdir().unwrap();
+        pack_init("buddy", dir.path()).unwrap();
+        let report = validate_pack(&dir.path().join("buddy")).unwrap();
+        assert!(report.ok, "{:?}", report.errors);
+        assert!(!report.warnings.is_empty());
+    }
+
+    #[test]
+    fn validate_rejects_missing_variant_asset() {
+        let dir = tempdir().unwrap();
+        pack_init("buddy", dir.path()).unwrap();
+        let pack = dir.path().join("buddy");
+        let manifest_path = pack.join(MANIFEST_NAME);
+        let raw = fs::read_to_string(&manifest_path).unwrap();
+        let mut manifest: FamiliarManifest = serde_json::from_str(&raw).unwrap();
+        manifest
+            .variants
+            .insert("missing".into(), "assets/missing.png".into());
+        fs::write(
+            &manifest_path,
+            serde_json::to_string_pretty(&manifest).unwrap(),
+        )
+        .unwrap();
+
+        let report = validate_pack(&pack).unwrap();
+        assert!(!report.ok);
+        assert!(report
+            .errors
+            .iter()
+            .any(|error| error.contains("missing asset for variant missing")));
+    }
+
+    #[test]
+    fn import_image_writes_fixed_names_and_validates() {
+        let dir = tempdir().unwrap();
+        let input = dir.path().join("foto.png");
+        fs::write(&input, tiny_png()).unwrap();
+        let out = dir.path().join("my-buddy");
+        let report = import_image_to_pack(ImportImageRequest {
+            input: &input,
+            out: &out,
+            colors: 16,
+            layout: ImportLayout::TiledMascot,
+            force: false,
+            name: Some("My Buddy"),
+            author: Some("tester"),
+            license: Some("CC0-1.0"),
+        })
+        .unwrap();
+        assert!(report.ok, "{:?}", report.errors);
+        assert!(out.join(SPRITESHEET_REL).is_file());
+        assert!(out.join(MANIFEST_NAME).is_file());
+        assert!(out.join(PERSONALITY_NAME).is_file());
+        assert_eq!(report.id, "my-buddy");
+        // no other image names
+        let assets: Vec<_> = fs::read_dir(out.join("assets"))
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        assert_eq!(assets, vec!["spritesheet.png"]);
+    }
+
+    #[test]
+    fn import_refuses_to_overwrite_without_force() {
+        let dir = tempdir().unwrap();
+        let input = dir.path().join("foto.png");
+        fs::write(&input, tiny_png()).unwrap();
+        let out = dir.path().join("pack");
+        fs::create_dir_all(&out).unwrap();
+        let err = import_image_to_pack(ImportImageRequest {
+            input: &input,
+            out: &out,
+            colors: 16,
+            layout: ImportLayout::TiledMascot,
+            force: false,
+            name: None,
+            author: None,
+            license: None,
+        })
+        .unwrap_err();
+        assert!(err.to_string().contains("--force"), "{err}");
+    }
+
+    #[test]
+    fn import_rejects_invalid_image() {
+        let dir = tempdir().unwrap();
+        let input = dir.path().join("foto.png");
+        fs::write(&input, b"not a png").unwrap();
+        let out = dir.path().join("pack");
+        let err = import_image_to_pack(ImportImageRequest {
+            input: &input,
+            out: &out,
+            colors: 16,
+            layout: ImportLayout::ContactSheet,
+            force: false,
+            name: None,
+            author: None,
+            license: None,
+        })
+        .unwrap_err();
+        assert!(!out.exists());
+        assert!(
+            err.to_string().to_lowercase().contains("image")
+                || err.to_string().contains("invalid"),
+            "{err}"
+        );
+    }
+}

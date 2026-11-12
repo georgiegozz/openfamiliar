@@ -1072,9 +1072,10 @@ name = "familiar-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "chrono",
  "clap",
+ "familiar-pixel",
  "hex",
+ "image",
  "mime_guess",
  "regex",
  "serde",
