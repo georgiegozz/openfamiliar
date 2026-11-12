@@ -766,8 +766,6 @@ pub fn read_validated_sheet(mascots_root: &Path, id: &str) -> Result<Vec<u8>> {
     Ok(fs::read(sheet)?)
 }
 
-
-
 pub const EDITOR_SHEET_SIZE: u32 = 256;
 pub const MIN_EDITOR_FPS: f32 = 1.0;
 pub const MAX_EDITOR_FPS: f32 = 12.0;
@@ -821,13 +819,14 @@ pub fn save_editor_mascot(
     let max_frame = SHEET_COLUMNS * SHEET_ROWS - 1;
     for (state, animation) in &request.animations {
         if !REQUIRED_STATES.contains(&state.as_str())
-            && !matches!(state.as_str(), "listening" | "answering" | "sleeping" | "wake" | "dragging")
+            && !matches!(
+                state.as_str(),
+                "listening" | "answering" | "sleeping" | "wake" | "dragging"
+            )
         {
             bail!("unknown animation state '{state}'");
         }
-        if animation.frames.is_empty()
-            || animation.frames.iter().any(|frame| *frame > max_frame)
-        {
+        if animation.frames.is_empty() || animation.frames.iter().any(|frame| *frame > max_frame) {
             bail!("animation '{state}' has an out-of-range frame");
         }
         if animation.fps < MIN_EDITOR_FPS || animation.fps > MAX_EDITOR_FPS {
@@ -904,8 +903,6 @@ pub fn save_editor_mascot(
     })
 }
 
-
-
 pub fn read_validated_personality(mascots_root: &Path, id: &str) -> Result<String> {
     let (dest, manifest) = load_validated_pack(mascots_root, id)?;
     let rel = manifest.personality;
@@ -919,7 +916,6 @@ pub fn read_validated_personality(mascots_root: &Path, id: &str) -> Result<Strin
     }
     Ok(text)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1125,7 +1121,6 @@ mod tests {
         );
     }
 
-
     fn blank_sheet_png() -> Vec<u8> {
         let img = RgbaImage::from_pixel(256, 256, Rgba([0, 0, 0, 0]));
         let mut out = Vec::new();
@@ -1179,7 +1174,7 @@ mod tests {
                 personality: "A painted buddy.",
                 png: &blank_sheet_png(),
                 fps: 4.0,
-                animations: animations,
+                animations,
             },
         )
         .unwrap_err();
@@ -1211,5 +1206,4 @@ mod tests {
         let personality = fs::read_to_string(root.join(info.id).join(PERSONALITY_NAME)).unwrap();
         assert!(personality.contains("quiet painted"));
     }
-
 }

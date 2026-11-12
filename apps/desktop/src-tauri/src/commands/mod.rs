@@ -425,7 +425,6 @@ pub fn list_local_mascots(
         .collect())
 }
 
-
 fn local_mascot_runtime(
     mascots_dir: &std::path::Path,
     id: &str,
@@ -505,8 +504,6 @@ pub fn set_active_mascot(
     Ok(saved)
 }
 
-
-
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EditorSaveDto {
@@ -585,7 +582,6 @@ pub fn get_editor_mascot(
         personality,
     })
 }
-
 
 #[cfg(test)]
 mod tests {
