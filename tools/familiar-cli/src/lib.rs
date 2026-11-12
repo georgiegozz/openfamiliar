@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use walkdir::WalkDir;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
@@ -518,24 +518,42 @@ pub fn is_valid_slug(id: &str) -> bool {
     !prev_dash && !start
 }
 
-/// Canonicalize `candidate` and ensure it stays inside `root`.
+/// Ensure `candidate` stays inside `root`.
+///
+/// The path is first checked lexically (absolute, `..` normalized, must stay
+/// under `root`) so a rejected path never creates directories outside `root`.
+/// Only after that check do we create missing directories and confirm the
+/// final location with `canonicalize` (which also catches symlink escapes).
 pub fn assert_path_inside(root: &Path, candidate: &Path) -> Result<PathBuf> {
-    if !root.exists() {
-        fs::create_dir_all(root)?;
+    let root_lex = normalize_lexically(&absolute_path(root)?)?;
+    let cand_lex = normalize_lexically(&absolute_path(candidate)?)?;
+    if !cand_lex.starts_with(&root_lex) {
+        bail!(
+            "path escapes mascot store: {} is not inside {}",
+            cand_lex.display(),
+            root_lex.display()
+        );
     }
-    let root_canon = fs::canonicalize(root)?;
-    let cand_canon = if candidate.exists() {
-        fs::canonicalize(candidate)?
+
+    fs::create_dir_all(&root_lex)?;
+    if !cand_lex.exists() {
+        if let Some(parent) = cand_lex.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+    }
+
+    let root_canon = fs::canonicalize(&root_lex)?;
+    let cand_canon = if cand_lex.exists() {
+        fs::canonicalize(&cand_lex)?
     } else {
-        let parent = candidate
+        let parent = cand_lex
             .parent()
             .ok_or_else(|| anyhow::anyhow!("invalid path"))?;
-        if !parent.exists() {
-            fs::create_dir_all(parent)?;
-        }
         let parent_canon = fs::canonicalize(parent)?;
         parent_canon.join(
-            candidate
+            cand_lex
                 .file_name()
                 .ok_or_else(|| anyhow::anyhow!("invalid path"))?,
         )
@@ -548,6 +566,41 @@ pub fn assert_path_inside(root: &Path, candidate: &Path) -> Result<PathBuf> {
         );
     }
     Ok(cand_canon)
+}
+
+fn absolute_path(path: &Path) -> Result<PathBuf> {
+    if path.is_absolute() {
+        Ok(path.to_path_buf())
+    } else {
+        Ok(std::env::current_dir()?.join(path))
+    }
+}
+
+/// Resolve `.` and `..` without touching the filesystem or following symlinks.
+fn normalize_lexically(path: &Path) -> Result<PathBuf> {
+    if !path.is_absolute() {
+        bail!("path must be absolute");
+    }
+    let mut out = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::Prefix(_) | Component::RootDir => out.push(component),
+            Component::CurDir => {}
+            Component::ParentDir => match out.components().next_back() {
+                Some(Component::Normal(_)) => {
+                    out.pop();
+                }
+                _ => {
+                    bail!(
+                        "path escapes mascot store: {} contains '..'",
+                        path.display()
+                    );
+                }
+            },
+            Component::Normal(_) => out.push(component),
+        }
+    }
+    Ok(out)
 }
 
 fn unique_slug(root: &Path, desired: &str) -> Result<String> {
@@ -884,5 +937,36 @@ mod tests {
         let outside = dir.path().join("outside");
         let err = assert_path_inside(&root, &outside).unwrap_err();
         assert!(err.to_string().contains("escapes"));
+    }
+
+    #[test]
+    fn path_escape_does_not_create_directories_outside_root() {
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("mascots");
+        fs::create_dir_all(&root).unwrap();
+
+        let outside_dir = dir.path().join("outside-created");
+        let escaped = root.join("..").join("outside-created").join("pack");
+        assert!(!outside_dir.exists());
+        let err = assert_path_inside(&root, &escaped).unwrap_err();
+        assert!(err.to_string().contains("escapes"), "{err}");
+        assert!(
+            !outside_dir.exists(),
+            "a rejected path must not create directories outside root"
+        );
+
+        let deep_root = dir.path().join("deep-outside");
+        let deep = root
+            .join("..")
+            .join("deep-outside")
+            .join("a")
+            .join("b")
+            .join("pack");
+        let err = assert_path_inside(&root, &deep).unwrap_err();
+        assert!(err.to_string().contains("escapes"), "{err}");
+        assert!(
+            !deep_root.exists(),
+            "a rejected path must not create directories outside root"
+        );
     }
 }
