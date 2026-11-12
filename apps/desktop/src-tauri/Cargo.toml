@@ -20,6 +20,8 @@ regex = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
+familiar-cli = { path = "../../../tools/familiar-cli" }
+base64 = "=0.22.1"
 
 [lib]
 name = "openfamiliar_desktop_lib"

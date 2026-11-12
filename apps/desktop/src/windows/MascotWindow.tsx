@@ -8,6 +8,10 @@ import {
   useState,
 } from "react";
 import { MascotSprite } from "../features/mascot/MascotSprite";
+import {
+  sheetDataUrl,
+  toRuntimeManifest,
+} from "../features/mascot/localMascotRuntime";
 import { AnswerView } from "../features/quick-ask/AnswerView";
 import {
   initialOneShotState,
@@ -15,10 +19,12 @@ import {
 } from "../features/quick-ask/oneShotMachine";
 import { backend, isTauri, normalizeBackendError } from "../lib/backend";
 import {
+  BUNDLED_MASCOT_ID,
   DEFAULT_PREFERENCES,
   type AppPreferences,
   type ProviderStatus,
 } from "../lib/types";
+import type { MascotRuntimeManifest } from "@openfamiliar/mascot-runtime";
 
 function createRequestId(): string {
   return (
@@ -34,6 +40,9 @@ export function MascotWindow() {
   const [codexStatus, setCodexStatus] = useState<ProviderStatus>();
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [customSheetUrl, setCustomSheetUrl] = useState<string>();
+  const [customManifest, setCustomManifest] = useState<MascotRuntimeManifest>();
+  const [customName, setCustomName] = useState<string>();
   const dragStart = useRef<{ x: number; y: number }>();
   const dragging = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -58,6 +67,34 @@ export function MascotWindow() {
   }, []);
 
   useEffect(() => {
+    const id = preferences.activeMascotId ?? BUNDLED_MASCOT_ID;
+    if (id === BUNDLED_MASCOT_ID) {
+      setCustomSheetUrl(undefined);
+      setCustomManifest(undefined);
+      setCustomName(undefined);
+      return;
+    }
+    let cancelled = false;
+    void backend
+      .getLocalMascotRuntime(id)
+      .then((runtime) => {
+        if (cancelled) return;
+        setCustomSheetUrl(sheetDataUrl(runtime.sheetPngBase64));
+        setCustomManifest(toRuntimeManifest(runtime));
+        setCustomName(runtime.name);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCustomSheetUrl(undefined);
+        setCustomManifest(undefined);
+        setCustomName(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [preferences.activeMascotId]);
+
+  useEffect(() => {
     void backend.getPreferences().then(setPreferences);
     void backend.detectCodex().then(setCodexStatus);
     if (!isTauri()) return;
@@ -70,6 +107,11 @@ export function MascotWindow() {
       ]);
       if (disposed) return;
       cleanups.push(await listen("quick-ask:open", openAsk));
+      cleanups.push(
+        await listen<AppPreferences>("preferences:changed", ({ payload }) => {
+          setPreferences(payload);
+        }),
+      );
       const currentWindow = getCurrentWindow();
       let saveTimer = 0;
       cleanups.push(
@@ -290,6 +332,9 @@ export function MascotWindow() {
             palette={preferences.mascotPalette}
             animationsEnabled={preferences.animationsEnabled}
             reduceMotion={preferences.reduceMotion}
+            displayName={customName}
+            customSheetUrl={customSheetUrl}
+            customManifest={customManifest}
           />
         </div>
         <button

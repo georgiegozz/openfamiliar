@@ -1,5 +1,6 @@
 import {
   preloadSpriteSheet,
+  type MascotRuntimeManifest,
   type MascotVisualState,
 } from "@openfamiliar/mascot-runtime";
 import { useEffect } from "react";
@@ -17,6 +18,9 @@ interface MascotSpriteProps {
   palette: MascotPalette;
   animationsEnabled: boolean;
   reduceMotion: boolean;
+  displayName?: string;
+  customSheetUrl?: string;
+  customManifest?: MascotRuntimeManifest;
 }
 
 export function MascotSprite({
@@ -25,39 +29,54 @@ export function MascotSprite({
   palette,
   animationsEnabled,
   reduceMotion,
+  displayName,
+  customSheetUrl,
+  customManifest,
 }: MascotSpriteProps) {
-  const selectedSheet = {
+  const bundledSheet = {
     teal: spriteSheetUrl,
     midnight: midnightSpriteSheetUrl,
     burgundy: burgundySpriteSheetUrl,
   }[palette];
+  const selectedSheet = customSheetUrl ?? bundledSheet;
+  const frameWidth = customManifest?.sheet.frameWidth ?? MASCOT_FRAME_SIZE;
+  const frameHeight = customManifest?.sheet.frameHeight ?? MASCOT_FRAME_SIZE;
+  const columns = customManifest?.sheet.columns ?? 4;
   useEffect(() => {
     void preloadSpriteSheet(selectedSheet).catch(() => undefined);
   }, [selectedSheet]);
-  const snapshot = useMascotRuntime(state, {
-    enabled: animationsEnabled,
-    reduceMotion,
-  });
-  const column = snapshot.frame % 4;
-  const row = Math.floor(snapshot.frame / 4);
+  const snapshot = useMascotRuntime(
+    state,
+    {
+      enabled: animationsEnabled,
+      reduceMotion,
+    },
+    customManifest,
+  );
+  const column = snapshot.frame % columns;
+  const row = Math.floor(snapshot.frame / columns);
+  const label = displayName ?? "Perrito Tech";
 
   return (
     <div
       className="mascot-sprite-viewport"
       data-animation={snapshot.animation}
       style={{
-        width: MASCOT_FRAME_SIZE * scale,
-        height: MASCOT_FRAME_SIZE * scale,
+        width: frameWidth * scale,
+        height: frameHeight * scale,
       }}
-      aria-label={`Perrito Tech: ${state}`}
+      aria-label={`${label}: ${state}`}
       role="img"
     >
       <div
         className="mascot-sprite-frame"
         style={{
           backgroundImage: `url(${selectedSheet})`,
-          backgroundPosition: `${-column * MASCOT_FRAME_SIZE}px ${-row * MASCOT_FRAME_SIZE}px`,
+          backgroundPosition: `${-column * frameWidth}px ${-row * frameHeight}px`,
+          backgroundSize: `${columns * frameWidth}px ${(customManifest?.sheet.rows ?? 4) * frameHeight}px`,
           transform: `scale(${scale})`,
+          width: frameWidth,
+          height: frameHeight,
         }}
       />
     </div>
