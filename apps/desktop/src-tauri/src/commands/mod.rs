@@ -667,8 +667,6 @@ pub fn delete_provider_secret(
     })
 }
 
-
-
 fn map_anthropic_error(error: familiar_anthropic::AnthropicError) -> CommandError {
     let kind = match error {
         familiar_anthropic::AnthropicError::NotAuthenticated => ErrorKind::NotAuthenticated,
@@ -720,7 +718,6 @@ pub async fn ask_one_shot(
         answer: result.text,
     })
 }
-
 
 #[cfg(test)]
 mod tests {

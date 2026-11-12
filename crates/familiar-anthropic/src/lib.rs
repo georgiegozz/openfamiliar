@@ -189,7 +189,10 @@ fn map_response(
     }
 }
 
-fn parse_success(body: Vec<u8>, max_response_bytes: usize) -> Result<AnthropicResponse, AnthropicError> {
+fn parse_success(
+    body: Vec<u8>,
+    max_response_bytes: usize,
+) -> Result<AnthropicResponse, AnthropicError> {
     if body.len() > max_response_bytes {
         return Err(AnthropicError::OutputTooLarge);
     }
@@ -227,7 +230,6 @@ pub fn public_error_message(error: &AnthropicError) -> &'static str {
     }
 }
 
-
 #[cfg(feature = "http")]
 pub struct ReqwestTransport {
     client: reqwest::Client,
@@ -253,11 +255,7 @@ impl ReqwestTransport {
         timeout: Duration,
     ) -> Result<HttpResponse, AnthropicError> {
         validate_endpoint(url)?;
-        let mut request = self
-            .client
-            .post(url)
-            .timeout(timeout)
-            .body(body);
+        let mut request = self.client.post(url).timeout(timeout).body(body);
         for (key, value) in headers {
             request = request.header(key, value);
         }
@@ -317,11 +315,10 @@ pub async fn complete_one_shot_reqwest<S: SecretStore>(
     map_response(response, request.max_response_bytes)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use familiar_credentials::{MemorySecretStore, SecretStore, redact_secrets};
+    use familiar_credentials::{redact_secrets, MemorySecretStore, SecretStore};
 
     fn ok_body() -> Vec<u8> {
         serde_json::json!({
@@ -378,7 +375,10 @@ mod tests {
         .unwrap_err();
         assert_eq!(error, AnthropicError::NotAuthenticated);
         assert!(transport.url.lock().unwrap().is_none());
-        assert_eq!(public_error_message(&error), "Anthropic is not authenticated");
+        assert_eq!(
+            public_error_message(&error),
+            "Anthropic is not authenticated"
+        );
     }
 
     #[test]

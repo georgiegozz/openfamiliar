@@ -135,7 +135,12 @@ impl AppPreferences {
             "codex".to_string()
         };
         let model = self.anthropic_model.trim();
-        self.anthropic_model = if model.is_empty() || model.len() > 80 || !model.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.') {
+        self.anthropic_model = if model.is_empty()
+            || model.len() > 80
+            || !model
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+        {
             "claude-sonnet-4-5".to_string()
         } else {
             model.to_string()
