@@ -2,15 +2,15 @@
 
 use anyhow::{bail, Context, Result};
 use familiar_pixel::{
-    import_image, Layout, PixelOptions, DEFAULT_COLORS, MAX_COLORS, MIN_COLORS, SHEET_COLUMNS,
-    SHEET_ROWS, FRAME_SIZE,
+    import_image, Layout, PixelOptions, DEFAULT_COLORS, FRAME_SIZE, MAX_COLORS, MIN_COLORS,
+    SHEET_COLUMNS, SHEET_ROWS,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use walkdir::WalkDir;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
@@ -137,7 +137,12 @@ pub fn slugify(name: &str) -> Result<String> {
         }
     }
     let out = out.trim_matches('-').to_string();
-    if out.is_empty() || out.len() > 64 || !out.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
+    if out.is_empty()
+        || out.len() > 64
+        || !out
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
         bail!("invalid pack id derived from '{name}'");
     }
     // must match [a-z0-9]+(-[a-z0-9]+)*
@@ -259,10 +264,12 @@ pub fn validate_pack(path: &Path) -> Result<ValidationReport> {
             .and_then(|e| e.to_str())
             .unwrap_or("")
             .to_lowercase();
-        if entry.path().extension().is_some() && !ALLOWED_EXTS.contains(&ext.as_str()) {
-            if ext != "txt" && !rel.eq_ignore_ascii_case("license") {
-                warnings.push(format!("unexpected extension .{ext} for {rel}"));
-            }
+        if entry.path().extension().is_some()
+            && !ALLOWED_EXTS.contains(&ext.as_str())
+            && ext != "txt"
+            && !rel.eq_ignore_ascii_case("license")
+        {
+            warnings.push(format!("unexpected extension .{ext} for {rel}"));
         }
         if matches!(
             ext.as_str(),
@@ -325,7 +332,7 @@ pub fn validate_pack(path: &Path) -> Result<ValidationReport> {
         license: manifest.license,
         states: REQUIRED_STATES.iter().map(|s| s.to_string()).collect(),
         variants: manifest.variants.keys().cloned().collect(),
-        file_hashes,
+        file_hashes: hashes,
         warnings,
         errors,
     })
@@ -600,8 +607,7 @@ mod tests {
         .unwrap_err();
         assert!(!out.exists());
         assert!(
-            err.to_string().to_lowercase().contains("image")
-                || err.to_string().contains("invalid"),
+            err.to_string().to_lowercase().contains("image") || err.to_string().contains("invalid"),
             "{err}"
         );
     }
