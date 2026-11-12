@@ -1,4 +1,5 @@
 pub mod app_paths;
+pub mod cli_agents;
 pub mod codex_process;
 pub mod credentials;
 pub mod logging;

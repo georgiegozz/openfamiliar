@@ -10,6 +10,7 @@ members = [
   "crates/familiar-pixel",
   "crates/familiar-credentials",
   "crates/familiar-anthropic",
+  "crates/familiar-oneshot-cli",
   "apps/desktop/src-tauri",
   "tools/familiar-cli",
 ]
@@ -23,6 +24,7 @@ default-members = [
   "crates/familiar-pixel",
   "crates/familiar-credentials",
   "crates/familiar-anthropic",
+  "crates/familiar-oneshot-cli",
   "tools/familiar-cli",
 ]
 

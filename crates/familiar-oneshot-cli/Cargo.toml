@@ -1,0 +1,15 @@
+[package]
+name = "familiar-oneshot-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Argv and executable helpers for one-shot OpenCode and Antigravity CLI calls"
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

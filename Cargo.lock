@@ -1058,6 +1058,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "familiar-oneshot-cli",
  "familiar-permissions",
  "serde",
  "serde_json",
@@ -1160,6 +1161,14 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "familiar-oneshot-cli"
+version = "0.1.0"
+dependencies = [
+ "tempfile",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -2717,6 +2726,7 @@ dependencies = [
  "familiar-anthropic",
  "familiar-cli",
  "familiar-credentials",
+ "familiar-oneshot-cli",
  "regex",
  "serde",
  "serde_json",

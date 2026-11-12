@@ -24,6 +24,39 @@ pub async fn detect_codex(state: State<'_, AppState>) -> Result<ProviderStatus, 
 }
 
 #[tauri::command]
+pub async fn detect_provider(state: State<'_, AppState>) -> Result<ProviderStatus, CommandError> {
+    let preferences = state.preferences.get();
+    match preferences.active_provider_id.as_str() {
+        "anthropic" => {
+            use familiar_credentials::SecretStore;
+            let configured = state
+                .credentials
+                .is_configured("anthropic")
+                .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+            Ok(ProviderStatus {
+                installed: true,
+                authenticated: configured,
+                compatible: true,
+                version: None,
+                executable: None,
+                message: if configured {
+                    "Anthropic está configurado en el llavero del sistema.".to_string()
+                } else {
+                    "Falta la API key de Anthropic en el llavero del sistema.".to_string()
+                },
+            })
+        }
+        "opencode" => Ok(state
+            .cli_agents
+            .detect(familiar_oneshot_cli::CliKind::OpenCode)),
+        "agy" => Ok(state
+            .cli_agents
+            .detect(familiar_oneshot_cli::CliKind::Antigravity)),
+        _ => Ok(state.codex.detect(preferences.codex_path.as_deref()).await),
+    }
+}
+
+#[tauri::command]
 pub async fn ask_codex(
     state: State<'_, AppState>,
     request: OneShotRequest,
@@ -40,7 +73,8 @@ pub async fn cancel_codex(
     state: State<'_, AppState>,
     request_id: String,
 ) -> Result<(), CommandError> {
-    state.codex.cancel(&request_id).await
+    state.codex.cancel(&request_id).await?;
+    state.cli_agents.cancel(&request_id).await
 }
 
 #[tauri::command]
@@ -687,11 +721,26 @@ pub async fn ask_one_shot(
     request: OneShotRequest,
 ) -> Result<OneShotResult, CommandError> {
     let preferences = state.preferences.get();
-    if preferences.active_provider_id != "anthropic" {
-        return state
-            .codex
-            .ask(request, preferences.codex_path.as_deref())
-            .await;
+    match preferences.active_provider_id.as_str() {
+        "anthropic" => {}
+        "opencode" => {
+            return state
+                .cli_agents
+                .ask(familiar_oneshot_cli::CliKind::OpenCode, request, None)
+                .await;
+        }
+        "agy" => {
+            return state
+                .cli_agents
+                .ask(familiar_oneshot_cli::CliKind::Antigravity, request, None)
+                .await;
+        }
+        _ => {
+            return state
+                .codex
+                .ask(request, preferences.codex_path.as_deref())
+                .await;
+        }
     }
     if request.prompt.trim().is_empty() || request.prompt.chars().count() > MAX_PROMPT_CHARS {
         return Err(CommandError::new(

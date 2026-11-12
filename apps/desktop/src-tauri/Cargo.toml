@@ -23,6 +23,7 @@ uuid = { workspace = true }
 familiar-cli = { path = "../../../tools/familiar-cli" }
 familiar-credentials = { path = "../../../crates/familiar-credentials" }
 familiar-anthropic = { path = "../../../crates/familiar-anthropic", features = ["http"] }
+familiar-oneshot-cli = { path = "../../../crates/familiar-oneshot-cli" }
 base64 = "=0.22.1"
 
 [lib]

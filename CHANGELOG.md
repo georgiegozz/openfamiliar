@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- One-shot OpenCode (`opencode run`) and Antigravity (`agy -p --sandbox`) CLI
+  adapters: separate argv (no shell / no `cmd /c`), empty temp working
+  directory, rejected `.cmd`/`.bat` wrappers or sibling `.exe` resolution,
+  and tool denial via a project-local `opencode.json` (OpenCode has no
+  official `--deny` flag) plus Antigravity headless soft-deny. OpenFamiliar
+  never reads those CLIs' credential stores.
+
 - Original, happy, collar-free dark-brindle Perrito Tech spritesheet based on
   operator-owned dog references, with deterministic teal, midnight, and burgundy
   variants limited to small state-prop accents

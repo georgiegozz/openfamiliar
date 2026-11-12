@@ -611,6 +611,11 @@
       "license": "Apache-2.0"
     },
     {
+      "name": "familiar-oneshot-cli",
+      "version": "0.1.0",
+      "license": "Apache-2.0"
+    },
+    {
       "name": "familiar-permissions",
       "version": "0.1.0",
       "license": "Apache-2.0"

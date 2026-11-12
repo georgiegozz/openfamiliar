@@ -69,6 +69,8 @@ pub enum BridgeError {
     SessionNotFound,
     #[error("cancelled")]
     Cancelled,
+    #[error("invalid task: {0}")]
+    InvalidTask(String),
 }
 
 pub type Result<T> = std::result::Result<T, BridgeError>;
@@ -125,14 +127,14 @@ impl AgentAdapter for GenericSubprocessAdapter {
 pub struct NamedCliAdapter {
     id: &'static str,
     program: &'static str,
-    arg_builder: fn(&str) -> Vec<String>,
+    arg_builder: fn(&str) -> Result<Vec<String>>,
 }
 
 impl NamedCliAdapter {
     pub const fn new(
         id: &'static str,
         program: &'static str,
-        arg_builder: fn(&str) -> Vec<String>,
+        arg_builder: fn(&str) -> Result<Vec<String>>,
     ) -> Self {
         Self {
             id,
@@ -151,28 +153,40 @@ impl AgentAdapter for NamedCliAdapter {
         which_exists(self.program)
     }
     fn build_command(&self, task: &str, _cwd: &std::path::Path) -> Result<(String, Vec<String>)> {
-        Ok((self.program.to_string(), (self.arg_builder)(task)))
+        Ok((self.program.to_string(), (self.arg_builder)(task)?))
     }
 }
 
 pub fn gemini_cli_adapter() -> NamedCliAdapter {
-    NamedCliAdapter::new("gemini-cli", "gemini", |task| vec![task.to_string()])
+    NamedCliAdapter::new("gemini-cli", "gemini", |task| Ok(vec![task.to_string()]))
 }
 
 pub fn codex_adapter() -> NamedCliAdapter {
     NamedCliAdapter::new("codex", "codex", |task| {
-        vec!["exec".into(), task.to_string()]
+        Ok(vec!["exec".into(), task.to_string()])
     })
 }
 
 pub fn opencode_adapter() -> NamedCliAdapter {
-    NamedCliAdapter::new("opencode", "opencode", |task| {
-        vec!["run".into(), task.to_string()]
-    })
+    NamedCliAdapter::new(
+        "opencode",
+        familiar_oneshot_cli::CliKind::OpenCode.program_name(),
+        |task| {
+            familiar_oneshot_cli::one_shot_args(familiar_oneshot_cli::CliKind::OpenCode, task)
+                .map_err(|error| BridgeError::InvalidTask(error.to_string()))
+        },
+    )
 }
 
 pub fn antigravity_adapter() -> NamedCliAdapter {
-    NamedCliAdapter::new("antigravity", "antigravity", |task| vec![task.to_string()])
+    NamedCliAdapter::new(
+        "antigravity",
+        familiar_oneshot_cli::CliKind::Antigravity.program_name(),
+        |task| {
+            familiar_oneshot_cli::one_shot_args(familiar_oneshot_cli::CliKind::Antigravity, task)
+                .map_err(|error| BridgeError::InvalidTask(error.to_string()))
+        },
+    )
 }
 
 struct LiveSession {
@@ -397,14 +411,38 @@ mod tests {
             .build_command("deploy", std::path::Path::new("C:/ws"))
             .unwrap();
         assert_eq!(prog, "opencode");
-        assert_eq!(args, vec!["run".to_string(), "deploy".to_string()]);
+        assert_eq!(
+            args,
+            vec!["run".to_string(), "--".to_string(), "deploy".to_string()]
+        );
+
+        let oc = opencode_adapter();
+        let special = familiar_oneshot_cli::SPECIAL_PROMPT_FIXTURE;
+        let (prog, args) = oc
+            .build_command(special, std::path::Path::new("C:/ws"))
+            .unwrap();
+        assert_eq!(prog, "opencode");
+        assert_eq!(
+            args,
+            familiar_oneshot_cli::one_shot_args(familiar_oneshot_cli::CliKind::OpenCode, special)
+                .unwrap()
+        );
+        assert_eq!(args.iter().filter(|arg| *arg == special).count(), 1);
 
         let ag = antigravity_adapter();
         let (prog, args) = ag
-            .build_command("task", std::path::Path::new("C:/ws"))
+            .build_command(special, std::path::Path::new("C:/ws"))
             .unwrap();
-        assert_eq!(prog, "antigravity");
-        assert_eq!(args, vec!["task".to_string()]);
+        assert_eq!(prog, "agy");
+        assert_eq!(
+            args,
+            familiar_oneshot_cli::one_shot_args(
+                familiar_oneshot_cli::CliKind::Antigravity,
+                special
+            )
+            .unwrap()
+        );
+        assert_eq!(args.iter().filter(|arg| *arg == special).count(), 1);
     }
 
     #[tokio::test]
