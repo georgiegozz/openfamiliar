@@ -34,7 +34,7 @@ export function MascotWindow() {
   const [codexStatus, setCodexStatus] = useState<ProviderStatus>();
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const dragStart = useRef<{ x: number; y: number }>();
+  const dragStart = useRef<{ x: number; y: number } | undefined>(undefined);
   const dragging = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const suppressClick = useRef(false);
