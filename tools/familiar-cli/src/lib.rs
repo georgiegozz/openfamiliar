@@ -766,6 +766,161 @@ pub fn read_validated_sheet(mascots_root: &Path, id: &str) -> Result<Vec<u8>> {
     Ok(fs::read(sheet)?)
 }
 
+
+
+pub const EDITOR_SHEET_SIZE: u32 = 256;
+pub const MIN_EDITOR_FPS: f32 = 1.0;
+pub const MAX_EDITOR_FPS: f32 = 12.0;
+pub const MAX_PERSONALITY_CHARS: usize = 8_192;
+const ALLOWED_LICENSES: &[&str] = &["CC0-1.0", "CC-BY-4.0", "Apache-2.0", "NOASSERTION"];
+
+#[derive(Debug, Clone)]
+pub struct EditorSaveRequest<'a> {
+    pub existing_id: Option<&'a str>,
+    pub name: &'a str,
+    pub license: &'a str,
+    pub personality: &'a str,
+    pub png: &'a [u8],
+    pub fps: f32,
+    pub animations: BTreeMap<String, AnimationDefinition>,
+}
+
+pub fn save_editor_mascot(
+    mascots_root: &Path,
+    request: EditorSaveRequest<'_>,
+) -> Result<LocalMascotInfo> {
+    if request.png.len() > MAX_IMPORT_BYTES {
+        bail!("image exceeds the {MAX_IMPORT_BYTES} byte limit");
+    }
+    if request.png.is_empty() {
+        bail!("image is empty");
+    }
+    let (width, height) = familiar_pixel::peek_dimensions(request.png)
+        .map_err(|error| anyhow::anyhow!("invalid sheet: {error}"))?;
+    if width != EDITOR_SHEET_SIZE || height != EDITOR_SHEET_SIZE {
+        bail!("editor sheet must be {EDITOR_SHEET_SIZE}x{EDITOR_SHEET_SIZE}");
+    }
+    let name = request.name.trim();
+    if name.is_empty() || name.len() > 80 {
+        bail!("mascot name is required");
+    }
+    if !ALLOWED_LICENSES.contains(&request.license) {
+        bail!("license must be one of: {}", ALLOWED_LICENSES.join(", "));
+    }
+    if request.personality.chars().count() > MAX_PERSONALITY_CHARS
+        || request.personality.contains('\0')
+    {
+        bail!("personality is too large or contains a NUL byte");
+    }
+    if !(MIN_EDITOR_FPS..=MAX_EDITOR_FPS).contains(&request.fps) {
+        bail!("fps must be between {MIN_EDITOR_FPS} and {MAX_EDITOR_FPS}");
+    }
+    if request.animations.is_empty() {
+        bail!("at least one animation is required");
+    }
+    let max_frame = SHEET_COLUMNS * SHEET_ROWS - 1;
+    for (state, animation) in &request.animations {
+        if !REQUIRED_STATES.contains(&state.as_str())
+            && !matches!(state.as_str(), "listening" | "answering" | "sleeping" | "wake" | "dragging")
+        {
+            bail!("unknown animation state '{state}'");
+        }
+        if animation.frames.is_empty()
+            || animation.frames.iter().any(|frame| *frame > max_frame)
+        {
+            bail!("animation '{state}' has an out-of-range frame");
+        }
+        if animation.fps < MIN_EDITOR_FPS || animation.fps > MAX_EDITOR_FPS {
+            bail!("animation '{state}' fps is out of range");
+        }
+    }
+    for required in REQUIRED_STATES {
+        if !request.animations.contains_key(*required) {
+            bail!("missing required animation '{required}'");
+        }
+    }
+
+    fs::create_dir_all(mascots_root)?;
+    let slug = if let Some(existing) = request.existing_id {
+        if !is_valid_slug(existing) || existing == BUNDLED_MASCOT_ID {
+            bail!("invalid or reserved mascot id");
+        }
+        existing.to_string()
+    } else {
+        unique_slug(mascots_root, name)?
+    };
+    let dest = assert_path_inside(mascots_root, &mascots_root.join(&slug))?;
+    if request.existing_id.is_some() && !dest.is_dir() {
+        bail!("mascot not found: {slug}");
+    }
+    if request.existing_id.is_none() && dest.exists() {
+        bail!("mascot directory already exists: {slug}");
+    }
+    fs::create_dir_all(dest.join("assets"))?;
+    fs::write(dest.join(SPRITESHEET_REL), request.png)?;
+
+    let mut states = BTreeMap::new();
+    for state in REQUIRED_STATES {
+        states.insert((*state).to_string(), SPRITESHEET_REL.to_string());
+    }
+    let manifest = FamiliarManifest {
+        schema: Some("https://openfamiliar.dev/schema/familiar-v1.json".into()),
+        id: slug.clone(),
+        name: name.to_string(),
+        version: "0.1.0".into(),
+        engine: ">=0.1.0".into(),
+        author: "local-user".into(),
+        license: request.license.to_string(),
+        homepage: None,
+        personality: PERSONALITY_NAME.into(),
+        states,
+        sprite_sheet: Some(SpriteSheetDefinition {
+            asset: SPRITESHEET_REL.into(),
+            frame_width: FRAME_SIZE,
+            frame_height: FRAME_SIZE,
+            columns: SHEET_COLUMNS,
+            rows: SHEET_ROWS,
+        }),
+        variants: BTreeMap::new(),
+        animations: request.animations,
+        asset_sources: vec!["Created locally with the OpenFamiliar avatar editor.".into()],
+        ai_generated: false,
+    };
+    fs::write(
+        dest.join(MANIFEST_NAME),
+        serde_json::to_string_pretty(&manifest)? + "\n",
+    )?;
+    fs::write(
+        dest.join(PERSONALITY_NAME),
+        request.personality.trim().to_string() + "\n",
+    )?;
+    let report = validate_pack(&dest)?;
+    if !report.ok {
+        bail!("saved pack failed validation: {:?}", report.errors);
+    }
+    Ok(LocalMascotInfo {
+        id: report.id,
+        name: report.name,
+    })
+}
+
+
+
+pub fn read_validated_personality(mascots_root: &Path, id: &str) -> Result<String> {
+    let (dest, manifest) = load_validated_pack(mascots_root, id)?;
+    let rel = manifest.personality;
+    if rel.contains("..") || Path::new(&rel).is_absolute() {
+        bail!("invalid personality path");
+    }
+    let path = assert_path_inside(&dest, &dest.join(rel))?;
+    let text = fs::read_to_string(path)?;
+    if text.chars().count() > MAX_PERSONALITY_CHARS {
+        bail!("personality is too large");
+    }
+    Ok(text)
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -969,4 +1124,92 @@ mod tests {
             "a rejected path must not create directories outside root"
         );
     }
+
+
+    fn blank_sheet_png() -> Vec<u8> {
+        let img = RgbaImage::from_pixel(256, 256, Rgba([0, 0, 0, 0]));
+        let mut out = Vec::new();
+        let encoder = image::codecs::png::PngEncoder::new(&mut out);
+        img.write_with_encoder(encoder).unwrap();
+        out
+    }
+
+    fn default_editor_anims() -> BTreeMap<String, AnimationDefinition> {
+        let mut animations = BTreeMap::new();
+        for state in REQUIRED_STATES {
+            animations.insert(
+                (*state).to_string(),
+                AnimationDefinition {
+                    frames: vec![0],
+                    fps: 4.0,
+                    loop_playback: true,
+                },
+            );
+        }
+        animations
+    }
+
+    #[test]
+    fn editor_save_rejects_wrong_dimensions_and_bad_fps() {
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("mascots");
+        let err = save_editor_mascot(
+            &root,
+            EditorSaveRequest {
+                existing_id: None,
+                name: "Painter",
+                license: "CC0-1.0",
+                personality: "A painted buddy.",
+                png: &tiny_png(),
+                fps: 4.0,
+                animations: default_editor_anims(),
+            },
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("256"));
+
+        let mut animations = default_editor_anims();
+        animations.get_mut("idle").unwrap().fps = 99.0;
+        let err = save_editor_mascot(
+            &root,
+            EditorSaveRequest {
+                existing_id: None,
+                name: "Painter",
+                license: "CC0-1.0",
+                personality: "A painted buddy.",
+                png: &blank_sheet_png(),
+                fps: 4.0,
+                animations: animations,
+            },
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("fps"));
+    }
+
+    #[test]
+    fn editor_save_writes_validated_pack() {
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("mascots");
+        let info = save_editor_mascot(
+            &root,
+            EditorSaveRequest {
+                existing_id: None,
+                name: "Painter Pal",
+                license: "CC-BY-4.0",
+                personality: "A quiet painted familiar.",
+                png: &blank_sheet_png(),
+                fps: 4.0,
+                animations: default_editor_anims(),
+            },
+        )
+        .unwrap();
+        assert_eq!(info.id, "painter-pal");
+        let listed = list_local_mascots(&root).unwrap();
+        assert_eq!(listed.len(), 1);
+        let png = read_validated_sheet(&root, &info.id).unwrap();
+        assert!(png.starts_with(b"\x89PNG"));
+        let personality = fs::read_to_string(root.join(info.id).join(PERSONALITY_NAME)).unwrap();
+        assert!(personality.contains("quiet painted"));
+    }
+
 }
