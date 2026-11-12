@@ -353,7 +353,6 @@ pub fn set_always_on_top_internal(
         .map_err(internal_error)
 }
 
-
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalMascotInfoDto {
@@ -402,13 +401,9 @@ pub fn import_mascot_image(
             "mascot name is required",
         ));
     }
-    let info = familiar_cli::import_bytes_as_local_mascot(
-        &state.mascots_dir,
-        name,
-        &request.data,
-        64,
-    )
-    .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let info =
+        familiar_cli::import_bytes_as_local_mascot(&state.mascots_dir, name, &request.data, 64)
+            .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
     Ok(LocalMascotInfoDto {
         id: info.id,
         name: info.name,
@@ -462,20 +457,19 @@ pub fn get_local_mascot_runtime(
     let png = familiar_cli::read_validated_sheet(&state.mascots_dir, &id)
         .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
     let _ = dest;
-    let sheet = manifest.sprite_sheet.unwrap_or(familiar_cli::SpriteSheetDefinition {
-        asset: familiar_cli::SPRITESHEET_REL.to_string(),
-        frame_width: 64,
-        frame_height: 64,
-        columns: 4,
-        rows: 4,
-    });
+    let sheet = manifest
+        .sprite_sheet
+        .unwrap_or(familiar_cli::SpriteSheetDefinition {
+            asset: familiar_cli::SPRITESHEET_REL.to_string(),
+            frame_width: 64,
+            frame_height: 64,
+            columns: 4,
+            rows: 4,
+        });
     Ok(LocalMascotRuntimeDto {
         id: manifest.id,
         name: manifest.name,
-        sheet_png_base64: base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            png,
-        ),
+        sheet_png_base64: base64::Engine::encode(&base64::engine::general_purpose::STANDARD, png),
         frame_width: sheet.frame_width,
         frame_height: sheet.frame_height,
         columns: sheet.columns,
@@ -503,7 +497,6 @@ pub fn set_active_mascot(
     let _ = app.emit("preferences:changed", &saved);
     Ok(saved)
 }
-
 
 #[cfg(test)]
 mod tests {
