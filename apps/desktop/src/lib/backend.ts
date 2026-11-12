@@ -31,6 +31,7 @@ export async function invokeBackend<T = unknown>(
 
 export const backend = {
   detectCodex: () => invokeBackend<ProviderStatus>("detect_codex"),
+  detectProvider: () => invokeBackend<ProviderStatus>("detect_provider"),
   askCodex: (request: OneShotRequest) =>
     invokeBackend<OneShotResult>("ask_codex", { request }),
   askOneShot: (request: OneShotRequest) =>
@@ -137,12 +138,13 @@ async function mockInvoke<T>(
     case "delete_provider_secret":
       return { providerId: "anthropic", configured: false } as T;
     case "detect_codex":
+    case "detect_provider":
       return {
         installed: false,
         authenticated: false,
         compatible: false,
         message:
-          "Browser preview: Codex CLI detection requires the Tauri build.",
+          "Browser preview: provider detection requires the Tauri build.",
       } as T;
     case "ask_codex":
     case "ask_one_shot":

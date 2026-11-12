@@ -35,7 +35,7 @@ export function SettingsWindow() {
 
   const providerLabel = useMemo(() => {
     if (!provider) return "Sin comprobar";
-    if (!provider.installed) return "Codex CLI no encontrado";
+    if (!provider.installed) return "Proveedor no encontrado";
     if (!provider.compatible) return "Versión incompatible";
     if (!provider.authenticated) return "Inicio de sesión requerido";
     return `Disponible${provider.version ? ` · ${provider.version}` : ""}`;
@@ -48,7 +48,7 @@ export function SettingsWindow() {
       .then(setLocalMascots)
       .catch(() => setLocalMascots([]));
     if (!isTauri()) {
-      void backend.detectCodex().then(setProvider);
+      void backend.detectProvider().then(setProvider);
       return;
     }
     let disposed = false;
@@ -66,11 +66,11 @@ export function SettingsWindow() {
       );
       const currentWindow = getCurrentWindow();
       if (await currentWindow.isVisible()) {
-        void backend.detectCodex().then(setProvider);
+        void backend.detectProvider().then(setProvider);
       }
       cleanups.push(
         await currentWindow.onFocusChanged(({ payload }) => {
-          if (payload) void backend.detectCodex().then(setProvider);
+          if (payload) void backend.detectProvider().then(setProvider);
         }),
       );
     })();
@@ -194,7 +194,7 @@ export function SettingsWindow() {
             </label>
             <button
               className="secondary-button align-start"
-              onClick={() => void backend.detectCodex().then(setProvider)}
+              onClick={() => void backend.detectProvider().then(setProvider)}
             >
               Comprobar de nuevo
             </button>
@@ -218,9 +218,15 @@ export function SettingsWindow() {
               </select>
               <small>
                 Codex, OpenCode y Antigravity usan la sesión de su propio CLI.
-                Anthropic guarda la API key solo en el almacén de credenciales
-                del sistema, nunca en preferences.json. El webview no hace fetch
-                al proveedor.
+                OpenFamiliar no lee esas credenciales. Anthropic guarda la API
+                key solo en el almacén de credenciales del sistema, nunca en
+                preferences.json. El webview no hace fetch al proveedor.
+                OpenCode corre `opencode run` en un directorio temporal vacío
+                con un `opencode.json` que deniega herramientas (no hay flag
+                oficial `--deny`; una regla global del operador podría
+                prevalecer). Antigravity corre `agy -p --sandbox` y confía en el
+                soft-deny headless; nunca se pasa
+                `--dangerously-skip-permissions`.
               </small>
             </label>
             <label className="settings-field">

@@ -96,7 +96,7 @@ export function MascotWindow() {
 
   useEffect(() => {
     void backend.getPreferences().then(setPreferences);
-    void backend.detectCodex().then(setCodexStatus);
+    void backend.detectProvider().then(setCodexStatus);
     if (!isTauri()) return;
     let disposed = false;
     const cleanups: Array<() => void> = [];
@@ -129,6 +129,10 @@ export function MascotWindow() {
       for (const cleanup of cleanups) cleanup();
     };
   }, [openAsk]);
+
+  useEffect(() => {
+    void backend.detectProvider().then(setCodexStatus);
+  }, [preferences.activeProviderId]);
 
   const submit = useCallback(async () => {
     const prompt = ask.question.trim();
@@ -198,7 +202,7 @@ export function MascotWindow() {
         <header>
           <div>
             <span className="eyebrow">Perrito Tech</span>
-            <h1>Pregunta rápida a Codex</h1>
+            <h1>Pregunta rápida</h1>
           </div>
           <button
             className="icon-button"
@@ -214,7 +218,7 @@ export function MascotWindow() {
           !codexStatus.compatible ||
           !codexStatus.authenticated) ? (
           <div className="onboarding-card">
-            <strong>Codex CLI requiere atención</strong>
+            <strong>El proveedor activo requiere atención</strong>
             <p>{codexStatus.message}</p>
             <button
               className="secondary-button"

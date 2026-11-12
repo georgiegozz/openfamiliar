@@ -166,13 +166,21 @@ pub fn codex_adapter() -> NamedCliAdapter {
 }
 
 pub fn opencode_adapter() -> NamedCliAdapter {
-    NamedCliAdapter::new("opencode", "opencode", |task| {
-        vec!["run".into(), task.to_string()]
-    })
+    NamedCliAdapter::new(
+        "opencode",
+        familiar_oneshot_cli::CliKind::OpenCode.program_name(),
+        |task| familiar_oneshot_cli::one_shot_args(familiar_oneshot_cli::CliKind::OpenCode, task),
+    )
 }
 
 pub fn antigravity_adapter() -> NamedCliAdapter {
-    NamedCliAdapter::new("antigravity", "antigravity", |task| vec![task.to_string()])
+    NamedCliAdapter::new(
+        "antigravity",
+        familiar_oneshot_cli::CliKind::Antigravity.program_name(),
+        |task| {
+            familiar_oneshot_cli::one_shot_args(familiar_oneshot_cli::CliKind::Antigravity, task)
+        },
+    )
 }
 
 struct LiveSession {
@@ -399,12 +407,31 @@ mod tests {
         assert_eq!(prog, "opencode");
         assert_eq!(args, vec!["run".to_string(), "deploy".to_string()]);
 
+        let oc = opencode_adapter();
+        let special = familiar_oneshot_cli::SPECIAL_PROMPT_FIXTURE;
+        let (prog, args) = oc
+            .build_command(special, std::path::Path::new("C:/ws"))
+            .unwrap();
+        assert_eq!(prog, "opencode");
+        assert_eq!(
+            args,
+            familiar_oneshot_cli::one_shot_args(familiar_oneshot_cli::CliKind::OpenCode, special)
+        );
+        assert_eq!(args.iter().filter(|arg| *arg == special).count(), 1);
+
         let ag = antigravity_adapter();
         let (prog, args) = ag
-            .build_command("task", std::path::Path::new("C:/ws"))
+            .build_command(special, std::path::Path::new("C:/ws"))
             .unwrap();
-        assert_eq!(prog, "antigravity");
-        assert_eq!(args, vec!["task".to_string()]);
+        assert_eq!(prog, "agy");
+        assert_eq!(
+            args,
+            familiar_oneshot_cli::one_shot_args(
+                familiar_oneshot_cli::CliKind::Antigravity,
+                special
+            )
+        );
+        assert_eq!(args.iter().filter(|arg| *arg == special).count(), 1);
     }
 
     #[tokio::test]

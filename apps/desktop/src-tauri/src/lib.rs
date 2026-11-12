@@ -3,6 +3,7 @@ mod domain;
 mod services;
 
 use crate::services::app_paths::AppPaths;
+use crate::services::cli_agents::CliAgentService;
 use crate::services::codex_process::CodexService;
 use crate::services::logging::{SafeEvent, SafeLogger};
 use crate::services::monitor_position::restore_mascot_position;
@@ -19,6 +20,7 @@ pub struct AppState {
     pub mascot_expanded: AtomicBool,
     pub mascots_dir: std::path::PathBuf,
     pub credentials: familiar_credentials::KeyringSecretStore,
+    pub cli_agents: CliAgentService,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -34,6 +36,7 @@ pub fn run() {
         let _ = preferences.replace(startup_preferences);
     }
     let codex = CodexService::new(paths.neutral_work_dir, logger.clone());
+    let cli_agents = CliAgentService::new(paths.cli_agents_work_dir.clone(), logger.clone());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_autostart::init(
@@ -47,9 +50,11 @@ pub fn run() {
             mascot_expanded: AtomicBool::new(false),
             mascots_dir: paths.mascots_dir.clone(),
             credentials: crate::services::credentials::production_store(),
+            cli_agents,
         })
         .invoke_handler(tauri::generate_handler![
             commands::detect_codex,
+            commands::detect_provider,
             commands::ask_codex,
             commands::ask_one_shot,
             commands::cancel_codex,
