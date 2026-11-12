@@ -1,6 +1,8 @@
 import type {
   AppPreferences,
   BackendError,
+  LocalMascotInfo,
+  LocalMascotRuntime,
   OneShotRequest,
   OneShotResult,
   ProviderStatus,
@@ -46,6 +48,16 @@ export const backend = {
   resetMascotPosition: () =>
     invokeBackend<AppPreferences>("reset_mascot_position"),
   quit: () => invokeBackend<void>("quit_app"),
+  importMascotImage: (request: { name: string; data: number[] }) =>
+    invokeBackend<LocalMascotInfo>("import_mascot_image", { request }),
+  listLocalMascots: () =>
+    invokeBackend<LocalMascotInfo[]>("list_local_mascots"),
+  getMascotSheetPng: (id: string) =>
+    invokeBackend<string | null>("get_mascot_sheet_png", { id }),
+  getLocalMascotRuntime: (id: string) =>
+    invokeBackend<LocalMascotRuntime>("get_local_mascot_runtime", { id }),
+  setActiveMascot: (id: string) =>
+    invokeBackend<AppPreferences>("set_active_mascot", { id }),
 };
 
 export function normalizeBackendError(error: unknown): BackendError {
@@ -82,6 +94,19 @@ async function mockInvoke<T>(
       return (args?.preferences ?? DEFAULT_PREFERENCES) as T;
     case "get_preferences":
       return DEFAULT_PREFERENCES as T;
+    case "list_local_mascots":
+      return [] as T;
+    case "import_mascot_image":
+      return { id: "preview-mascot", name: "Preview" } as T;
+    case "get_mascot_sheet_png":
+      return null as T;
+    case "get_local_mascot_runtime":
+      throw new Error("Browser preview has no local mascot runtime.");
+    case "set_active_mascot":
+      return {
+        ...DEFAULT_PREFERENCES,
+        activeMascotId: String(args?.id ?? "perrito-tech"),
+      } as T;
     case "detect_codex":
       return {
         installed: false,

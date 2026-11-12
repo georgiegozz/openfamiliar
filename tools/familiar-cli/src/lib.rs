@@ -486,6 +486,220 @@ pub fn default_import_colors() -> u32 {
     DEFAULT_COLORS
 }
 
+
+pub const BUNDLED_MASCOT_ID: &str = "perrito-tech";
+pub const MAX_IMPORT_BYTES: usize = familiar_pixel::MAX_INPUT_BYTES;
+
+pub fn is_valid_slug(id: &str) -> bool {
+    if id.is_empty() || id.len() > 64 {
+        return false;
+    }
+    let mut start = true;
+    let mut prev_dash = false;
+    for c in id.chars() {
+        if start {
+            if !c.is_ascii_lowercase() && !c.is_ascii_digit() {
+                return false;
+            }
+            start = false;
+            continue;
+        }
+        if c == '-' {
+            if prev_dash {
+                return false;
+            }
+            prev_dash = true;
+            continue;
+        }
+        if !c.is_ascii_lowercase() && !c.is_ascii_digit() {
+            return false;
+        }
+        prev_dash = false;
+    }
+    !prev_dash && !start
+}
+
+/// Canonicalize `candidate` and ensure it stays inside `root`.
+pub fn assert_path_inside(root: &Path, candidate: &Path) -> Result<PathBuf> {
+    if !root.exists() {
+        fs::create_dir_all(root)?;
+    }
+    let root_canon = fs::canonicalize(root)?;
+    let cand_canon = if candidate.exists() {
+        fs::canonicalize(candidate)?
+    } else {
+        let parent = candidate.parent().ok_or_else(|| anyhow::anyhow!("invalid path"))?;
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+        let parent_canon = fs::canonicalize(parent)?;
+        parent_canon.join(candidate.file_name().ok_or_else(|| anyhow::anyhow!("invalid path"))?)
+    };
+    if !cand_canon.starts_with(&root_canon) {
+        bail!(
+            "path escapes mascot store: {} is not inside {}",
+            cand_canon.display(),
+            root_canon.display()
+        );
+    }
+    Ok(cand_canon)
+}
+
+fn unique_slug(root: &Path, desired: &str) -> Result<String> {
+    let base = slugify(desired)?;
+    if !is_valid_slug(&base) {
+        bail!("invalid mascot id '{base}'");
+    }
+    if base != BUNDLED_MASCOT_ID && !root.join(&base).exists() {
+        return Ok(base);
+    }
+    let start = if base == BUNDLED_MASCOT_ID { 2 } else { 2 };
+    for i in start..1000 {
+        let candidate = format!("{base}-{i}");
+        if !root.join(&candidate).exists() {
+            return Ok(candidate);
+        }
+    }
+    bail!("could not allocate a unique mascot id")
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct LocalMascotInfo {
+    pub id: String,
+    pub name: String,
+}
+
+pub fn list_local_mascots(root: &Path) -> Result<Vec<LocalMascotInfo>> {
+    let mut out = Vec::new();
+    if !root.exists() {
+        return Ok(out);
+    }
+    let root_canon = fs::canonicalize(root)?;
+    for entry in fs::read_dir(root)? {
+        let entry = entry?;
+        if !entry.file_type()?.is_dir() {
+            continue;
+        }
+        let path = entry.path();
+        let canon = match fs::canonicalize(&path) {
+            Ok(p) => p,
+            Err(_) => continue,
+        };
+        if !canon.starts_with(&root_canon) {
+            continue;
+        }
+        match validate_pack(&path) {
+            Ok(report) if report.ok && is_valid_slug(&report.id) && path.file_name().and_then(|s| s.to_str()) == Some(report.id.as_str()) => {
+                out.push(LocalMascotInfo {
+                    id: report.id,
+                    name: report.name,
+                });
+            }
+            _ => continue,
+        }
+    }
+    out.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(out)
+}
+
+pub fn import_bytes_as_local_mascot(
+    mascots_root: &Path,
+    suggested_name: &str,
+    bytes: &[u8],
+    colors: u32,
+) -> Result<LocalMascotInfo> {
+    if bytes.len() > MAX_IMPORT_BYTES {
+        bail!("image exceeds the {MAX_IMPORT_BYTES} byte limit");
+    }
+    if bytes.is_empty() {
+        bail!("image is empty");
+    }
+    fs::create_dir_all(mascots_root)?;
+    let _root = fs::canonicalize(mascots_root)?;
+    let slug = unique_slug(mascots_root, suggested_name)?;
+    let dest = mascots_root.join(&slug);
+    let dest = assert_path_inside(mascots_root, &dest)?;
+    // write to a temp sibling then... we use dest directly after path check
+    let tmp_input = mascots_root.join(format!(".{slug}.incoming.png"));
+    let tmp_input = assert_path_inside(mascots_root, &tmp_input)?;
+    fs::write(&tmp_input, bytes)?;
+    let result = import_image_to_pack(ImportImageRequest {
+        input: &tmp_input,
+        out: &dest,
+        colors,
+        layout: ImportLayout::TiledMascot,
+        force: false,
+        name: Some(suggested_name),
+        author: Some("local-user"),
+        license: Some("NOASSERTION"),
+    });
+    let _ = fs::remove_file(&tmp_input);
+    let report = result?;
+    if !report.ok {
+        let _ = fs::remove_dir_all(&dest);
+        bail!("imported pack failed validation: {:?}", report.errors);
+    }
+    // Keep the unique directory name as the pack id so collisions never overwrite
+    // a sibling pack. The display name stays as given by the operator.
+    if report.id != slug {
+        let manifest_path = dest.join(MANIFEST_NAME);
+        let raw = fs::read_to_string(&manifest_path)?;
+        let mut manifest: FamiliarManifest = serde_json::from_str(&raw)?;
+        manifest.id = slug.clone();
+        manifest.name = suggested_name.to_string();
+        fs::write(&manifest_path, serde_json::to_string_pretty(&manifest)? + "\n")?;
+        let report = validate_pack(&dest)?;
+        if !report.ok {
+            let _ = fs::remove_dir_all(&dest);
+            bail!("imported pack failed validation after id fix: {:?}", report.errors);
+        }
+        return Ok(LocalMascotInfo {
+            id: slug,
+            name: suggested_name.to_string(),
+        });
+    }
+    Ok(LocalMascotInfo {
+        id: report.id,
+        name: report.name,
+    })
+}
+
+pub fn load_validated_pack(mascots_root: &Path, id: &str) -> Result<(PathBuf, FamiliarManifest)> {
+    if !is_valid_slug(id) || id == BUNDLED_MASCOT_ID {
+        bail!("invalid or reserved mascot id");
+    }
+    let dest = assert_path_inside(mascots_root, &mascots_root.join(id))?;
+    if !dest.is_dir() {
+        bail!("mascot not found: {id}");
+    }
+    let report = validate_pack(&dest)?;
+    if !report.ok {
+        bail!("local pack is invalid: {:?}", report.errors);
+    }
+    if report.id != id {
+        bail!("pack id does not match directory name");
+    }
+    let raw = fs::read_to_string(dest.join(MANIFEST_NAME))?;
+    let manifest: FamiliarManifest = serde_json::from_str(&raw)?;
+    Ok((dest, manifest))
+}
+
+pub fn read_validated_sheet(mascots_root: &Path, id: &str) -> Result<Vec<u8>> {
+    let (dest, manifest) = load_validated_pack(mascots_root, id)?;
+    let rel = manifest
+        .sprite_sheet
+        .as_ref()
+        .map(|s| s.asset.as_str())
+        .or_else(|| manifest.states.get("idle").map(|s| s.as_str()))
+        .unwrap_or(SPRITESHEET_REL);
+    if rel.contains("..") || Path::new(rel).is_absolute() {
+        bail!("invalid sheet path");
+    }
+    let sheet = assert_path_inside(&dest, &dest.join(rel))?;
+    Ok(fs::read(sheet)?)
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -611,4 +825,57 @@ mod tests {
             "{err}"
         );
     }
+
+    #[test]
+    fn slug_validation() {
+        assert!(is_valid_slug("my-buddy"));
+        assert!(is_valid_slug("a1"));
+        assert!(!is_valid_slug(""));
+        assert!(!is_valid_slug("My-Buddy"));
+        assert!(!is_valid_slug("../etc"));
+        assert!(!is_valid_slug("foo--bar"));
+        assert!(!is_valid_slug("-foo"));
+        assert!(!is_valid_slug("foo-"));
+    }
+
+    #[test]
+    fn import_bytes_rejects_oversized_payload_before_write() {
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("mascots");
+        let bytes = vec![0u8; MAX_IMPORT_BYTES + 1];
+        let err = import_bytes_as_local_mascot(&root, "buddy", &bytes, 16).unwrap_err();
+        assert!(err.to_string().contains("byte limit"));
+        assert!(!root.join("buddy").exists());
+    }
+
+    #[test]
+    fn import_bytes_stays_inside_root_and_validates() {
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("mascots");
+        let info = import_bytes_as_local_mascot(&root, "Buddy Pal", &tiny_png(), 16).unwrap();
+        assert!(is_valid_slug(&info.id));
+        let listed = list_local_mascots(&root).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].id, info.id);
+        let png = read_validated_sheet(&root, &info.id).unwrap();
+        assert!(png.starts_with(b"\x89PNG"));
+        let escaped = import_bytes_as_local_mascot(
+            &root,
+            "..",
+            &tiny_png(),
+            16,
+        );
+        assert!(escaped.is_err());
+    }
+
+    #[test]
+    fn path_escape_is_rejected() {
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("mascots");
+        fs::create_dir_all(&root).unwrap();
+        let outside = dir.path().join("outside");
+        let err = assert_path_inside(&root, &outside).unwrap_err();
+        assert!(err.to_string().contains("escapes"));
+    }
+
 }

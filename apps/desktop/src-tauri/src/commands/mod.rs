@@ -69,6 +69,7 @@ pub fn update_preferences(
             .map_err(|error| internal_error(error.to_string()))?;
     }
     set_mascot_expanded_internal(&app, &state, state.mascot_expanded.load(Ordering::SeqCst))?;
+    let _ = app.emit("preferences:changed", &saved);
     Ok(saved)
 }
 
@@ -351,6 +352,158 @@ pub fn set_always_on_top_internal(
         .replace(preferences)
         .map_err(internal_error)
 }
+
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalMascotInfoDto {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportMascotRequest {
+    pub name: String,
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalMascotRuntimeDto {
+    pub id: String,
+    pub name: String,
+    pub sheet_png_base64: String,
+    pub frame_width: u32,
+    pub frame_height: u32,
+    pub columns: u32,
+    pub rows: u32,
+    pub animations: std::collections::BTreeMap<String, familiar_cli::AnimationDefinition>,
+}
+
+#[tauri::command]
+pub fn import_mascot_image(
+    state: State<'_, AppState>,
+    request: ImportMascotRequest,
+) -> Result<LocalMascotInfoDto, CommandError> {
+    if request.data.len() > familiar_cli::MAX_IMPORT_BYTES {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            format!(
+                "image exceeds the {} byte limit",
+                familiar_cli::MAX_IMPORT_BYTES
+            ),
+        ));
+    }
+    let name = request.name.trim();
+    if name.is_empty() || name.len() > 80 {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            "mascot name is required",
+        ));
+    }
+    let info = familiar_cli::import_bytes_as_local_mascot(
+        &state.mascots_dir,
+        name,
+        &request.data,
+        64,
+    )
+    .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(LocalMascotInfoDto {
+        id: info.id,
+        name: info.name,
+    })
+}
+
+#[tauri::command]
+pub fn list_local_mascots(
+    state: State<'_, AppState>,
+) -> Result<Vec<LocalMascotInfoDto>, CommandError> {
+    let list = familiar_cli::list_local_mascots(&state.mascots_dir)
+        .map_err(|error| internal_error(error.to_string()))?;
+    Ok(list
+        .into_iter()
+        .map(|info| LocalMascotInfoDto {
+            id: info.id,
+            name: info.name,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub fn get_mascot_sheet_png(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<Option<String>, CommandError> {
+    if id == familiar_cli::BUNDLED_MASCOT_ID {
+        return Ok(None);
+    }
+    let bytes = familiar_cli::read_validated_sheet(&state.mascots_dir, &id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(Some(base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        bytes,
+    )))
+}
+
+#[tauri::command]
+pub fn get_local_mascot_runtime(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<LocalMascotRuntimeDto, CommandError> {
+    if id == familiar_cli::BUNDLED_MASCOT_ID {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            "bundled mascot is served from the app bundle",
+        ));
+    }
+    let (dest, manifest) = familiar_cli::load_validated_pack(&state.mascots_dir, &id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let png = familiar_cli::read_validated_sheet(&state.mascots_dir, &id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let _ = dest;
+    let sheet = manifest.sprite_sheet.unwrap_or(familiar_cli::SpriteSheetDefinition {
+        asset: familiar_cli::SPRITESHEET_REL.to_string(),
+        frame_width: 64,
+        frame_height: 64,
+        columns: 4,
+        rows: 4,
+    });
+    Ok(LocalMascotRuntimeDto {
+        id: manifest.id,
+        name: manifest.name,
+        sheet_png_base64: base64::Engine::encode(
+            &base64::engine::general_purpose::STANDARD,
+            png,
+        ),
+        frame_width: sheet.frame_width,
+        frame_height: sheet.frame_height,
+        columns: sheet.columns,
+        rows: sheet.rows,
+        animations: manifest.animations,
+    })
+}
+
+#[tauri::command]
+pub fn set_active_mascot(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<AppPreferences, CommandError> {
+    if id != familiar_cli::BUNDLED_MASCOT_ID {
+        let _ = familiar_cli::load_validated_pack(&state.mascots_dir, &id)
+            .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    }
+    let mut preferences = state.preferences.get();
+    preferences.active_mascot_id = id;
+    let saved = state
+        .preferences
+        .replace(preferences)
+        .map_err(internal_error)?;
+    let _ = app.emit("preferences:changed", &saved);
+    Ok(saved)
+}
+
 
 #[cfg(test)]
 mod tests {
