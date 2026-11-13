@@ -1,0 +1,9 @@
+# Historical windows-user-path findings that are no longer in the current tree.
+# Fingerprints only; do not copy the original path strings here.
+1d1f7600f35e6b1496da79e969b2739e70d85bd0:apps/desktop/src-tauri/src/lib.rs:windows-user-path:264
+1d1f7600f35e6b1496da79e969b2739e70d85bd0:apps/desktop/src-tauri/src/lib.rs:windows-user-path:284
+1d1f7600f35e6b1496da79e969b2739e70d85bd0:apps/desktop/src-tauri/src/lib.rs:windows-user-path:312
+1d1f7600f35e6b1496da79e969b2739e70d85bd0:apps/desktop/src-tauri/src/lib.rs:windows-user-path:368
+9f767b77af20d5705c8d1e5917eba036302e67fd:docs/guides/dev-windows.md:windows-user-path:15
+9f767b77af20d5705c8d1e5917eba036302e67fd:docs/HUMAN_FOLLOWUP_MANUAL.md:windows-user-path:122
+9f767b77af20d5705c8d1e5917eba036302e67fd:plan.txt:windows-user-path:974

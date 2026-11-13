@@ -133,6 +133,83 @@ This job does not validate `mascots/blank-template` (that pack is covered in
 
 Permissions on this job are `contents: read` and `pull-requests: read`.
 
+### `.github/workflows/pr-review.yml`
+
+A second pull-request workflow. It runs only on `pull_request` to `main`
+(never `pull_request_target`), with workflow `permissions: contents: read`,
+`persist-credentials: false` on every checkout, and concurrency per pull
+request. It does not replace the `js`, `rust`, or `secrets` jobs in `ci.yml`.
+All third-party actions are pinned to a full commit SHA, with the release tag
+in a comment.
+
+**`secret-scan`** (`ubuntu-24.04`):
+
+1. Checkout with `fetch-depth: 0`.
+2. Install gitleaks 8.30.1 from the official GitHub release after verifying
+   the published SHA-256 digest (the MIT-licensed binary, not
+   `gitleaks/gitleaks-action`). The digest comes from
+   `gitleaks_8.30.1_checksums.txt` on the `v8.30.1` release, for the
+   `gitleaks_8.30.1_linux_x64.tar.gz` asset.
+3. `gitleaks detect` on the pull request commit range and again on the full
+   git history, with `--redact`. `.gitleaks.toml` extends the default rules
+   with checks for subscription GUIDs (only with subscription context) and
+   Windows user-profile paths. It allowlists the fictional provider-shaped
+   strings used to unit-test `redact_secrets` only in
+   `crates/familiar-storage/src/lib.rs` and only for the `generic-api-key`
+   rule. `.gitleaksignore` lists fingerprints for historical
+   `windows-user-path` findings that are no longer in the current tree.
+
+**`dependency-review`** (`ubuntu-24.04`):
+
+`actions/dependency-review-action` with `fail-on-severity: high` and
+`allow-licenses` aligned with `deny.toml`. This reviews dependency changes in
+the pull request; it does not replace the lockfile-wide `cargo` and `pnpm`
+advisory jobs.
+
+**`rust-advisories`** (`ubuntu-24.04`):
+
+1. Rust stable via `dtolnay/rust-toolchain`, pinned by action SHA.
+2. cargo-deny 0.20.2 and cargo-audit 0.23.0, installed from GitHub releases
+   with SHA-256 verification.
+   - cargo-deny: release `EmbarkStudios/cargo-deny` tag `0.20.2`, asset
+     `cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz`, digest from the
+     matching `.sha256` asset on that release.
+   - cargo-audit: release `rustsec/rustsec` tag `cargo-audit/v0.23.0`, asset
+     `cargo-audit-x86_64-unknown-linux-musl-v0.23.0.tgz`. That release does
+     not publish a checksums file; the digest pinned in the workflow was
+     recorded from this official asset on 2026-11-12.
+3. `cargo deny --locked check licenses bans sources` (hard fail).
+4. Unit tests under `scripts/ci/tests`.
+5. `cargo audit --json` and `cargo deny --locked -f json check advisories`,
+   compared to `scripts/ci/advisory-baseline.json`. Known IDs are printed.
+   The job fails on a new ID, an expired baseline entry (the grace period
+   has ended), or a stale entry. The baseline is linked to the tracking
+   issue in the `issue` field (https://github.com/georgiegozz/openfamiliar/issues/31).
+
+**`javascript-audit`** (`ubuntu-24.04`):
+
+pnpm 9.15.0 and Node 20, then `pnpm audit --json` against the lockfile (no
+`pnpm install`, so no dependency lifecycle scripts run), compared to the
+same baseline (high and critical only).
+
+Local equivalents:
+
+```bash
+python3 -m unittest discover -s scripts/ci/tests -p 'test_*.py'
+gitleaks detect --source . --redact --no-banner --exit-code 1
+cargo deny --locked check licenses bans sources
+cargo audit --json > /tmp/cargo-audit.json || true
+cargo deny --locked -f json check advisories > /tmp/cargo-deny-advisories.json 2>&1 || true
+python3 scripts/ci/check_advisory_baseline.py --ecosystem rust \
+  --cargo-audit-json /tmp/cargo-audit.json \
+  --cargo-deny-json /tmp/cargo-deny-advisories.json
+pnpm audit --json > /tmp/pnpm-audit.json || true
+python3 scripts/ci/check_advisory_baseline.py --ecosystem javascript \
+  --pnpm-audit-json /tmp/pnpm-audit.json
+```
+
+### Other workflow, not part of the PR CI gate
+
 ### Other workflow, not part of the PR CI gate
 
 `.github/workflows/windows-package.yml` is a separate workflow. It runs only
