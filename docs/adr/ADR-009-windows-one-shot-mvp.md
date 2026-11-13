@@ -27,3 +27,10 @@ visible in the stable UI.
 - Tests use a fake CLI and consume no service quota.
 - Additional providers or agent behavior require a future explicit decision and
   must not reuse the stable one-shot boundary implicitly.
+
+## Later decisions
+
+The v0.1 decision above is unchanged. A later proposal to add other one-shot
+providers (Anthropic over Rust, OS keychain storage, and OpenCode / Antigravity
+CLIs) is recorded in [ADR-010](./ADR-010-additional-one-shot-providers.md). That
+document does not amend this one until it is accepted and implemented.
