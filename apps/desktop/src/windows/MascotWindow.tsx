@@ -43,7 +43,7 @@ export function MascotWindow() {
   const [customSheetUrl, setCustomSheetUrl] = useState<string>();
   const [customManifest, setCustomManifest] = useState<MascotRuntimeManifest>();
   const [customName, setCustomName] = useState<string>();
-  const dragStart = useRef<{ x: number; y: number }>();
+  const dragStart = useRef<{ x: number; y: number } | undefined>(undefined);
   const dragging = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const suppressClick = useRef(false);

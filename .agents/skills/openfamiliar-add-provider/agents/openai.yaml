@@ -1,0 +1,5 @@
+interface:
+  display_name: "OpenFamiliar Add Provider"
+  short_description: "Add a one-shot or experimental provider"
+  brand_color: "#43D7B0"
+  default_prompt: "Use $openfamiliar-add-provider to add or review a provider safely."
