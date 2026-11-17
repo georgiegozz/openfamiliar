@@ -435,10 +435,11 @@ fn local_mascot_runtime(
             "bundled mascot is served from the app bundle",
         ));
     }
-    let (_, manifest) = familiar_cli::load_validated_pack(mascots_dir, id)
+    let (dest, manifest) = familiar_cli::load_validated_pack(mascots_dir, id)
         .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
     let png = familiar_cli::read_validated_sheet(mascots_dir, id)
         .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let _ = dest;
     let sheet = manifest
         .sprite_sheet
         .unwrap_or(familiar_cli::SpriteSheetDefinition {
