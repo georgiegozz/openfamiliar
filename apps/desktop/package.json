@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "typecheck": "tsc -b --pretty false",
-    "test": "node --import tsx --test src/lib/states.test.ts src/features/quick-ask/oneShotMachine.test.ts src/features/mascot/localMascotRuntime.test.ts"
+    "test": "node --import tsx --test src/lib/states.test.ts src/features/quick-ask/oneShotMachine.test.ts src/features/mascot/localMascotRuntime.test.ts src/features/mascot-editor/model.test.ts"
   },
   "dependencies": {
     "@openfamiliar/mascot-runtime": "workspace:*",

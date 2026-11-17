@@ -65,6 +65,8 @@ pub fn run() {
             commands::get_mascot_sheet_png,
             commands::get_local_mascot_runtime,
             commands::set_active_mascot,
+            commands::save_editor_mascot,
+            commands::get_editor_mascot,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

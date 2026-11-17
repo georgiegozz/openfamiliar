@@ -1,6 +1,8 @@
 import type {
   AppPreferences,
   BackendError,
+  EditorMascot,
+  EditorSaveRequest,
   LocalMascotInfo,
   LocalMascotRuntime,
   OneShotRequest,
@@ -58,6 +60,10 @@ export const backend = {
     invokeBackend<LocalMascotRuntime>("get_local_mascot_runtime", { id }),
   setActiveMascot: (id: string) =>
     invokeBackend<AppPreferences>("set_active_mascot", { id }),
+  saveEditorMascot: (request: EditorSaveRequest) =>
+    invokeBackend<LocalMascotInfo>("save_editor_mascot", { request }),
+  getEditorMascot: (id: string) =>
+    invokeBackend<EditorMascot>("get_editor_mascot", { id }),
 };
 
 export function normalizeBackendError(error: unknown): BackendError {
@@ -107,6 +113,10 @@ async function mockInvoke<T>(
         ...DEFAULT_PREFERENCES,
         activeMascotId: String(args?.id ?? "perrito-tech"),
       } as T;
+    case "save_editor_mascot":
+      return { id: "preview-mascot", name: "Preview" } as T;
+    case "get_editor_mascot":
+      throw new Error("Browser preview has no editor pack.");
     case "detect_codex":
       return {
         installed: false,
