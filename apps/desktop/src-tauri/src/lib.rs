@@ -17,6 +17,7 @@ pub struct AppState {
     pub preferences: PreferencesStore,
     pub logger: SafeLogger,
     pub mascot_expanded: AtomicBool,
+    pub mascots_dir: std::path::PathBuf,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -43,6 +44,7 @@ pub fn run() {
             preferences,
             logger,
             mascot_expanded: AtomicBool::new(false),
+            mascots_dir: paths.mascots_dir.clone(),
         })
         .invoke_handler(tauri::generate_handler![
             commands::detect_codex,
@@ -58,6 +60,11 @@ pub fn run() {
             commands::save_mascot_position,
             commands::reset_mascot_position,
             commands::quit_app,
+            commands::import_mascot_image,
+            commands::list_local_mascots,
+            commands::get_mascot_sheet_png,
+            commands::get_local_mascot_runtime,
+            commands::set_active_mascot,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

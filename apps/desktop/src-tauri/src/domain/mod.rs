@@ -77,6 +77,7 @@ pub struct AppPreferences {
     pub launch_at_startup: bool,
     pub codex_path: Option<String>,
     pub timeout_seconds: u64,
+    pub active_mascot_id: String,
 }
 
 impl Default for AppPreferences {
@@ -93,6 +94,7 @@ impl Default for AppPreferences {
             launch_at_startup: false,
             codex_path: None,
             timeout_seconds: 120,
+            active_mascot_id: "perrito-tech".to_string(),
         }
     }
 }
@@ -116,6 +118,12 @@ impl AppPreferences {
             let trimmed = path.trim();
             (!trimmed.is_empty() && trimmed.len() <= 1_024).then(|| trimmed.to_string())
         });
+        let id = self.active_mascot_id.trim();
+        self.active_mascot_id = if id == "perrito-tech" || familiar_cli::is_valid_slug(id) {
+            id.to_string()
+        } else {
+            "perrito-tech".to_string()
+        };
         self
     }
 }

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { backend, isTauri, normalizeBackendError } from "../lib/backend";
 import {
+  BUNDLED_MASCOT_ID,
   DEFAULT_PREFERENCES,
   type AppPreferences,
+  type LocalMascotInfo,
   type ProviderStatus,
 } from "../lib/types";
 
@@ -23,6 +25,8 @@ export function SettingsWindow() {
   const [provider, setProvider] = useState<ProviderStatus>();
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [localMascots, setLocalMascots] = useState<LocalMascotInfo[]>([]);
+  const [importError, setImportError] = useState("");
 
   const providerLabel = useMemo(() => {
     if (!provider) return "Sin comprobar";
@@ -34,6 +38,10 @@ export function SettingsWindow() {
 
   useEffect(() => {
     void backend.getPreferences().then(setPreferences);
+    void backend
+      .listLocalMascots()
+      .then(setLocalMascots)
+      .catch(() => setLocalMascots([]));
     if (!isTauri()) {
       void backend.detectCodex().then(setProvider);
       return;
@@ -190,6 +198,85 @@ export function SettingsWindow() {
 
         {tab === "Apariencia" ? (
           <div className="settings-section">
+            <label className="settings-field">
+              <span>Familiar activo</span>
+              <select
+                value={preferences.activeMascotId}
+                onChange={(event) => {
+                  const id = event.target.value;
+                  void backend
+                    .setActiveMascot(id)
+                    .then((next) => {
+                      setPreferences(next);
+                      setNotice(
+                        id === BUNDLED_MASCOT_ID
+                          ? "Perrito Tech es el familiar predeterminado."
+                          : "Familiar local activado.",
+                      );
+                    })
+                    .catch((error) =>
+                      setNotice(normalizeBackendError(error).message),
+                    );
+                }}
+              >
+                <option value={BUNDLED_MASCOT_ID}>
+                  Perrito Tech (predeterminado)
+                </option>
+                {localMascots.map((mascot) => (
+                  <option key={mascot.id} value={mascot.id}>
+                    {mascot.name}
+                  </option>
+                ))}
+              </select>
+              <small>
+                Los familiares importados viven en los datos de la aplicación y
+                se validan como paquetes no confiables. Perrito Tech sigue
+                siendo el predeterminado.
+              </small>
+            </label>
+            <label className="settings-field">
+              <span>Importar imagen</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,.png,.jpg,.jpeg"
+                disabled={busy}
+                onChange={(event) => {
+                  const input = event.currentTarget;
+                  const file = input.files?.[0];
+                  input.value = "";
+                  if (!file) return;
+                  setBusy(true);
+                  setImportError("");
+                  void (async () => {
+                    try {
+                      const buffer = new Uint8Array(await file.arrayBuffer());
+                      const name =
+                        file.name.replace(/\.[^.]+$/, "") || "mi-familiar";
+                      const info = await backend.importMascotImage({
+                        name,
+                        data: Array.from(buffer),
+                      });
+                      const listed = await backend.listLocalMascots();
+                      setLocalMascots(listed);
+                      const next = await backend.setActiveMascot(info.id);
+                      setPreferences(next);
+                      setNotice(`Importado y activado: ${info.name}.`);
+                    } catch (error) {
+                      const message = normalizeBackendError(error).message;
+                      setImportError(message);
+                      setNotice(message);
+                    } finally {
+                      setBusy(false);
+                    }
+                  })();
+                }}
+              />
+              <small>
+                PNG o JPEG local. Se convierte a una hoja 256×256 en pixel art y
+                se guarda solo en esta máquina. No se envía a la red.
+              </small>
+              {importError ? <small role="alert">{importError}</small> : null}
+            </label>
             <label className="settings-field">
               <span>Escala pixel-perfect</span>
               <select

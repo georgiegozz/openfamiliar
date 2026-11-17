@@ -1,6 +1,7 @@
 import {
   MascotRuntime,
   type FrameSnapshot,
+  type MascotRuntimeManifest,
   type MascotVisualState,
 } from "@openfamiliar/mascot-runtime";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,8 +14,10 @@ interface RuntimeOptions {
 export function useMascotRuntime(
   visualState: MascotVisualState,
   options: RuntimeOptions,
+  manifest?: MascotRuntimeManifest,
 ): FrameSnapshot {
-  const runtimeRef = useRef(new MascotRuntime());
+  const runtimeRef = useRef(new MascotRuntime(manifest));
+  const manifestId = manifest?.id ?? "perrito-tech";
   const [documentVisible, setDocumentVisible] = useState(
     () => !document.hidden,
   );
@@ -27,6 +30,11 @@ export function useMascotRuntime(
         : next,
     );
   }, []);
+
+  useEffect(() => {
+    runtimeRef.current = new MascotRuntime(manifest);
+    publish(runtimeRef.current.playState(visualState, true));
+  }, [manifest, manifestId, publish, visualState]);
 
   useEffect(() => {
     publish(runtimeRef.current.playState(visualState, true));
@@ -59,6 +67,7 @@ export function useMascotRuntime(
     options.reduceMotion,
     publish,
     snapshot.animation,
+    manifestId,
   ]);
 
   useEffect(() => {

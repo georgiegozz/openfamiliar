@@ -27,6 +27,7 @@ export interface AppPreferences {
   launchAtStartup: boolean;
   codexPath?: string;
   timeoutSeconds: number;
+  activeMascotId: string;
 }
 
 export interface BackendError {
@@ -55,4 +56,23 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   language: "es-MX",
   launchAtStartup: false,
   timeoutSeconds: 120,
+  activeMascotId: "perrito-tech",
 };
+
+export const BUNDLED_MASCOT_ID = "perrito-tech";
+
+export interface LocalMascotInfo {
+  id: string;
+  name: string;
+}
+
+export interface LocalMascotRuntime {
+  id: string;
+  name: string;
+  sheetPngBase64: string;
+  frameWidth: number;
+  frameHeight: number;
+  columns: number;
+  rows: number;
+  animations: Record<string, { frames: number[]; fps: number; loop: boolean }>;
+}
