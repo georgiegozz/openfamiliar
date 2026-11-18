@@ -2,6 +2,7 @@ use crate::domain::{
     AppPreferences, CommandError, ErrorKind, OneShotRequest, OneShotResult, ProviderStatus,
     SavedPosition,
 };
+use crate::services::credentials::is_settings_window;
 use crate::services::monitor_position::restore_mascot_position;
 use crate::AppState;
 use std::sync::atomic::Ordering;
@@ -584,10 +585,8 @@ pub fn get_editor_mascot(
     })
 }
 
-const SETTINGS_WINDOW_LABEL: &str = "settings";
-
 fn require_settings_window_label(label: &str) -> Result<(), CommandError> {
-    if label != SETTINGS_WINDOW_LABEL {
+    if !is_settings_window(label) {
         return Err(CommandError::new(
             ErrorKind::InvalidRequest,
             "secret commands are only accepted from the settings window",
