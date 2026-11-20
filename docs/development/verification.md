@@ -184,7 +184,7 @@ advisory jobs.
    compared to `scripts/ci/advisory-baseline.json`. Known IDs are printed.
    The job fails on a new ID, an expired baseline entry (the grace period
    has ended), or a stale entry. The baseline is linked to the tracking
-   issue in the `issue` field (https://github.com/georgiegozz/openfamiliar/issues/31).
+   issue in the `issue` field (https://github.com/p3rformative/openfamiliar/issues/31).
 
 **`javascript-audit`** (`ubuntu-24.04`):
 

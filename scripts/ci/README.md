@@ -15,7 +15,7 @@ every run. The job fails when:
 
 `expiresOn` dates are a maintainer decision. The grace period is tracked by
 the issue URL in the `issue` field
-(https://github.com/georgiegozz/openfamiliar/issues/31). Do not add `ignore` entries in `deny.toml` for the same IDs; that
+(https://github.com/p3rformative/openfamiliar/issues/31). Do not add `ignore` entries in `deny.toml` for the same IDs; that
 would hide them from `cargo deny` itself.
 
 ## Pinned release installer

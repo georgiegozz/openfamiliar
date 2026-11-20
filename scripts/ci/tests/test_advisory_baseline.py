@@ -253,11 +253,11 @@ class AdvisoryBaselineTests(unittest.TestCase):
 
     def test_production_baseline_links_tracking_issue_and_grace_date(self) -> None:
         baseline = json.loads((SCRIPTS_CI / "advisory-baseline.json").read_text(encoding="utf-8"))
-        self.assertEqual(baseline.get("trackingIssue"), "https://github.com/georgiegozz/openfamiliar/issues/31")
+        self.assertEqual(baseline.get("trackingIssue"), "https://github.com/p3rformative/openfamiliar/issues/31")
         entries = list(baseline["rust"]) + list(baseline["javascript"])
         self.assertGreater(len(entries), 0)
         for entry in entries:
-            self.assertEqual(entry.get("issue"), "https://github.com/georgiegozz/openfamiliar/issues/31", entry.get("id"))
+            self.assertEqual(entry.get("issue"), "https://github.com/p3rformative/openfamiliar/issues/31", entry.get("id"))
             self.assertEqual(entry.get("expiresOn"), "2027-02-10", entry.get("id"))
 
     def test_placeholder_issue_is_noted_but_does_not_fail_before_expiry(self) -> None:
