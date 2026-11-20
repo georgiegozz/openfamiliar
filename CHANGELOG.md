@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Maintainer checklist and a manual, inert GitHub Actions workflow for a
+  possible SignPath Foundation evaluation (`docs/signing.md`). The workflow
+  does not run on pull requests and does not sign anything until repository
+  variables and secrets are configured. Current binaries remain unsigned.
+
 - Agent workflow documentation: module and crate map, local and CI
   verification (including the Windows license-inventory sort order), a pull
   request checklist, repo skills for adding a provider, adding a mascot pack,
