@@ -1,0 +1,167 @@
+# Manual or tag-triggered Windows release workflow with signed updater artifacts.
+#
+# This file is inert until a maintainer sets the repository variable
+# UPDATER_RELEASE_ENABLED=true and the TAURI_SIGNING_PRIVATE_KEY secret
+# (and TAURI_SIGNING_PRIVATE_KEY_PASSWORD if the key uses one). It does not
+# create git tags. A GitHub Release is created only on a v*.*.* tag after
+# the workflow has been enabled. See docs/guides/signed-updates.md.
+#
+# Adding or changing a workflow requires explicit maintainer authorization
+# before merge.
+#
+# Do not put API tokens, private keys, or other secrets in this file.
+
+name: windows-release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  skipped-notice:
+    if: ${{ vars.UPDATER_RELEASE_ENABLED != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Release publishing is not enabled
+        run: |
+          echo "This workflow is inert."
+          echo "It does not build, sign, tag, or create a GitHub Release."
+          echo "To enable it after the minisign key pair exists, follow docs/guides/signed-updates.md:"
+          echo "  1. Commit the public key and updater endpoint in tauri.conf.json"
+          echo "  2. Add repository secret TAURI_SIGNING_PRIVATE_KEY (never commit it)"
+          echo "  3. Optionally add TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          echo "  4. Set repository variable UPDATER_RELEASE_ENABLED=true"
+          echo "  5. A maintainer creates a vX.Y.Z tag themselves when ready"
+          echo "OpenFamiliar does not claim that current binaries are signed."
+
+  preflight:
+    if: ${{ vars.UPDATER_RELEASE_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Confirm the updater signing key is configured
+        env:
+          KEY_PRESENT: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+        run: |
+          if [ "$KEY_PRESENT" != "true" ]; then
+            echo "UPDATER_RELEASE_ENABLED is true, but TAURI_SIGNING_PRIVATE_KEY is not set."
+            echo "No build, signing, or GitHub Release will be started. See docs/guides/signed-updates.md."
+            exit 1
+          fi
+          echo "The updater signing key secret is present. The build job may run."
+
+  build:
+    needs: preflight
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 9.15.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@df2a88e9fe4098bad09cb42c3dec7187f15861fc # master (2026-11-15)
+        with:
+          toolchain: stable
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve version
+        id: meta
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like "refs/tags/v*") {
+            $version = $env:GITHUB_REF_NAME
+          } else {
+            $version = "0.1.0"
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Build signed updater artifacts
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: >
+          pnpm --filter @openfamiliar/desktop tauri build --config
+          "{\"bundle\":{\"createUpdaterArtifacts\":true}}"
+
+      - name: Hash installers
+        shell: pwsh
+        run: |
+          Get-ChildItem target/release/bundle -Recurse -File -Include *.msi,*.exe,*.sig |
+            Get-FileHash -Algorithm SHA256 |
+            ForEach-Object { "{0}  {1}" -f $_.Hash, $_.Path } |
+            Set-Content -Encoding utf8 target/release/bundle/SHA256SUMS.txt
+
+      - name: Write latest.json
+        shell: pwsh
+        run: |
+          $version = "${{ steps.meta.outputs.version }}"
+          $base = "https://github.com/${{ github.repository }}/releases/download/$version"
+          ./scripts/release/Write-LatestJson.ps1 `
+            -Version $version `
+            -DownloadBaseUrl $base `
+            -BundleRoot "target/release/bundle" `
+            -OutputPath "target/release/bundle/latest.json"
+
+      - name: Upload unsigned-or-signed workflow artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: openfamiliar-windows-release-${{ github.sha }}
+          path: |
+            target/release/bundle/msi/*
+            target/release/bundle/nsis/*
+            target/release/bundle/SHA256SUMS.txt
+            target/release/bundle/latest.json
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: openfamiliar-windows-release-${{ github.sha }}
+          path: release-assets
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --notes "Signed OpenFamiliar Windows installers and updater metadata for ${{ github.ref_name }}. See docs/guides/signed-updates.md." \
+            --repo "${{ github.repository }}" \
+            release-assets/latest.json \
+            release-assets/SHA256SUMS.txt \
+            release-assets/msi/* \
+            release-assets/nsis/*

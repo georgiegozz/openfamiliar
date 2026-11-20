@@ -5,6 +5,12 @@ a self-signed installer is not suitable for public GitHub distribution. Windows
 treats it like an unsigned download until each recipient explicitly trusts the
 private test certificate.
 
+In-app updates use a separate minisign key pair, documented in
+`docs/guides/signed-updates.md`. That channel is inert until a maintainer
+generates the keys, commits only the public key, and later publishes a signed
+release. It does not replace Authenticode / SignPath signing of the
+installers.
+
 ## Recommended release paths
 
 1. **Microsoft Store / MSIX**: lowest-friction path for a first public project.

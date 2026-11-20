@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "settings-updater",
+  "description": "Signed updater commands are limited to the Settings window. The mascot window does not receive updater permissions.",
+  "windows": ["settings"],
+  "permissions": [
+    "updater:allow-check",
+    "updater:allow-download",
+    "updater:allow-install",
+    "updater:allow-download-and-install"
+  ]
+}
