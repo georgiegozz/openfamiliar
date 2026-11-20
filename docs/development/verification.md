@@ -15,7 +15,7 @@ run on `windows-latest`.
 | -------------------------------------------------- | ----------------------------------------------------- |
 | Node.js 20+                                        | `package.json` `engines`                              |
 | pnpm 9.15.0                                        | `packageManager` and CI `pnpm/action-setup`           |
-| Rust stable, `rust-version` 1.80, rustfmt, clippy  | root `Cargo.toml`, CI `dtolnay/rust-toolchain@stable` |
+| Rust stable, `rust-version` 1.88, rustfmt, clippy  | root `Cargo.toml`, CI `dtolnay/rust-toolchain@stable` |
 | Python 3.12                                        | CI `js` job and asset scripts                         |
 | Visual Studio Build Tools 2022 (MSVC) and WebView2 | [dev-windows.md](../guides/dev-windows.md)            |
 | Codex CLI, installed and authenticated             | only for a human Quick Ask smoke test                 |

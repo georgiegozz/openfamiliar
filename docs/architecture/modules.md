@@ -50,7 +50,7 @@ here.
 ## Rust crates and tools
 
 Workspace members are listed in the root `Cargo.toml`.
-`rust-version` is `1.80`. `openfamiliar-desktop` is a member but is not in
+`rust-version` is `1.88`. `openfamiliar-desktop` is a member but is not in
 `default-members`.
 
 | Path                            | Crate                              | Responsibility                                                                                                                                                             | Internal dependencies                                          | Status                                          |
