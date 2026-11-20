@@ -12,3 +12,4 @@
 | 008 | [Licensing strategy](./ADR-008-licensing-strategy.md)                       | Accepted |
 | 009 | [Windows one-shot Codex MVP](./ADR-009-windows-one-shot-mvp.md)             | Accepted |
 | 010 | [Additional one-shot providers](./ADR-010-additional-one-shot-providers.md) | Proposed |
+| 011 | [Agent-state mode](./ADR-011-agent-state-mode.md)                           | Proposed |
