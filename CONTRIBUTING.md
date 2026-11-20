@@ -20,6 +20,21 @@ The pull request checklist lives in `.github/PULL_REQUEST_TEMPLATE.md`.
 Agent rules and the module map start at [AGENTS.md](./AGENTS.md).
 Windows toolchain notes also live in [docs/guides/dev-windows.md](./docs/guides/dev-windows.md).
 
+## Repository Layout
+
+```text
+apps/desktop/              stable Windows Tauri + React application
+packages/mascot-runtime/   pixel-art animation runtime
+packages/mascot-sdk/       familiar pack types
+packages/provider-sdk/     one-shot provider contract + experimental contract
+mascots/perrito-tech/      canonical spritesheet, manifest, and art license
+crates/                    experimental/future shared Rust services
+adapters/                  experimental/future provider and CLI scaffolds
+docs/                      ADRs, architecture map, verification, playbooks, security, testing, and guides
+docs/development/          local and CI verification, including the license inventory
+.agents/skills/            repo-local reusable skills
+```
+
 ## Prerequisites
 
 - Windows 11 x64

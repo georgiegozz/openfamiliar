@@ -55,8 +55,12 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
 <summary>Unsigned installer, here's how to verify</summary>
 
 The `v0.1.0` public beta is unsigned, so Windows may display a SmartScreen warning.
-Each release includes `SHA256SUMS.txt`; public-repository builds also generate
-GitHub artifact attestations. Verify a downloaded installer with:
+Download `SHA256SUMS.txt` from the [v0.1.0 Releases page](https://github.com/p3rformative/openfamiliar/releases/tag/v0.1.0),
+where it is published as a release asset next to the installers
+([direct download](https://github.com/p3rformative/openfamiliar/releases/download/v0.1.0/SHA256SUMS.txt)).
+When the repository is public, the packaging workflow attests the NSIS `.exe`
+and the `.msi` installers; it does not attest `SHA256SUMS.txt`. Verify a
+downloaded NSIS installer with:
 
 ```powershell
 Get-FileHash .\OpenFamiliar_*.exe -Algorithm SHA256
@@ -72,17 +76,19 @@ checksum and install only when both the repository and artifact are trusted.
 
 You click the mascot, type one question, and OpenFamiliar starts a fresh
 read-only Codex CLI process. The answer appears in Quick Ask. The prompt and
-answer stay in memory only for that request; the process then exits. Optional
-provider keys, if you add one in Settings, are stored in the OS keychain, never
-in `preferences.json` or logs. One-shot answers on this release still go through
-Codex CLI.
+answer stay in memory only for that request; the process then exits.
+OpenFamiliar does not save the question or the answer. Codex CLI sends your
+question to its provider under its own terms; OpenFamiliar does not control
+what they retain. Optional provider keys, if you add one in Settings, are
+stored in the OS keychain, never in `preferences.json` or logs. One-shot
+answers on this release still go through Codex CLI.
 
 ```mermaid
 flowchart LR
   A[Click mascot] --> B[Ask one question]
   B --> C[Fresh Codex CLI process]
   C --> D[Answer in Quick Ask]
-  D --> E[Process exits; nothing is saved]
+  D --> E[OpenFamiliar saves nothing]
 ```
 
 ## Status
@@ -120,7 +126,9 @@ and the [security boundary playbook](./docs/agent-playbooks/security-boundaries.
 
 ## Contributing
 
-Setup, validation, and installer builds are in [CONTRIBUTING.md](./CONTRIBUTING.md).
+Setup, validation, installer builds, and the
+[repository layout](./CONTRIBUTING.md#repository-layout) are in
+[CONTRIBUTING.md](./CONTRIBUTING.md).
 Pack types live in [`packages/mascot-sdk`](./packages/mascot-sdk).
 Perrito Tech artwork is credited as “Perrito Tech — OpenFamiliar contributors”
 (CC BY 4.0); see the [asset notice](./mascots/perrito-tech/NOTICE).
@@ -131,9 +139,9 @@ OpenFamiliar account, cloud backend, or telemetry; and contributors who build
 or validate familiar packs with `mascot-sdk`.
 
 Questions and patches go through [Issues](https://github.com/p3rformative/openfamiliar/issues)
-and pull requests. Issues labeled
+and pull requests. Look for issues labeled
 [good first issue](https://github.com/p3rformative/openfamiliar/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-are marked for newcomers (none are open at the time of this writing).
+if you want a starter task.
 
 ## License
 
