@@ -221,11 +221,13 @@ export function SettingsWindow() {
               </select>
               <small>
                 Quick Ask responde con Anthropic si lo eliges y hay una clave en
-                el llavero. OpenCode y Antigravity se pueden seleccionar, pero
-                todavía no responden; en ese caso la pregunta sale por Codex
-                CLI. Anthropic guarda la API key solo en el almacén de
-                credenciales del sistema, nunca en preferences.json. El webview
-                no hace fetch al proveedor.
+                el llavero. Si eliges Anthropic y no hay clave guardada, Quick
+                Ask muestra un error de autenticación y no recurre a Codex CLI.
+                OpenCode y Antigravity se pueden seleccionar, pero todavía no
+                responden; en ese caso la pregunta sale por Codex CLI. Anthropic
+                guarda la API key solo en el almacén de credenciales del
+                sistema, nunca en preferences.json. El webview no hace fetch al
+                proveedor.
               </small>
             </label>
             <label className="settings-field">
@@ -483,8 +485,16 @@ export function SettingsWindow() {
               No hay acceso genérico a shell, workspace ni modo agente. Puedes
               guardar una clave opcional de proveedor en el llavero del sistema,
               nunca en preferences.json ni en los logs. Si eliges Anthropic y
-              hay una clave guardada, Quick Ask la usa para responder; si no, la
-              pregunta sigue saliendo por el Codex CLI instalado.
+              hay una clave guardada, Quick Ask la usa para responder. Si eliges
+              Anthropic y no hay clave guardada, Quick Ask muestra un error de
+              autenticación y no recurre a Codex CLI.
+            </p>
+            <p>
+              Si eliges Anthropic con una clave guardada, OpenFamiliar envía tu
+              pregunta directamente a api.anthropic.com por HTTPS usando tu
+              clave; Anthropic la trata bajo sus propios términos y OpenFamiliar
+              no controla qué retiene. No se hace ninguna petición a Anthropic
+              salvo que lo selecciones y haya una clave guardada.
             </p>
           </div>
         ) : null}

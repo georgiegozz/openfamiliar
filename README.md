@@ -41,7 +41,7 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
 
 - Ask one independent question, get an answer, and the interaction is discarded. OpenFamiliar does not keep a conversation history.
 - A transparent, always-on-top pixel-art companion. Idle stays visually static; animation runs only for explicit events.
-- Quick Ask uses the Codex CLI you already installed and signed in. OpenFamiliar does not read Codex auth storage.
+- By default, Quick Ask uses the Codex CLI you already installed and signed in. OpenFamiliar does not read Codex auth storage.
 
 **Built for:** people who already use Codex CLI and want a quiet desktop way to
 ask one question; operators who want a local-first companion with no
@@ -86,13 +86,19 @@ process then exits. OpenFamiliar does not save the question or the answer.
 When the answer goes through Codex CLI, Codex CLI sends your question to its
 provider under its own terms; OpenFamiliar does not control what they retain.
 Optional provider keys, if you add one in Settings, are stored in the OS
-keychain, never in `preferences.json` or logs. One-shot answers go through
-Codex CLI unless you select Anthropic and a key is stored.
+keychain, never in `preferences.json` or logs. Newer builds than v0.1.0 can
+also answer through Anthropic if you select it and a key is stored. If you
+select Anthropic and a key is stored, OpenFamiliar sends your question
+directly to api.anthropic.com over HTTPS using your key; Anthropic handles
+it under its own terms and OpenFamiliar does not control what it retains.
+No request is made to Anthropic unless you select it and a key is stored.
+If you select Anthropic and no key is stored, Quick Ask shows an
+authentication error and does not fall back to Codex CLI.
 
 ```mermaid
 flowchart LR
   A[Click mascot] --> B[Ask one question]
-  B --> C[Fresh Codex CLI process]
+  B --> C[Fresh Codex CLI process (or Anthropic if selected)]
   C --> D[Answer in Quick Ask]
   D --> E[OpenFamiliar saves nothing]
 ```
@@ -107,7 +113,7 @@ event-only animation, teal/midnight/burgundy accents, Settings, tray,
 click-through recovery, preferences, monitor-safe position, timeout/cancel, OS
 keychain for optional provider secrets, and unsigned MSI/NSIS installers are
 implemented and tested as described in [ROADMAP.md](./ROADMAP.md). Quick Ask
-answers through Codex CLI, with fake-CLI tests. A clean-user smoke test has
+answers through Codex CLI by default, with fake-CLI tests. A clean-user smoke test has
 passed on a separate Windows computer.
 
 OpenCode and Antigravity are planned. The v0.1.0 installer answers only through
@@ -119,7 +125,7 @@ Settings. Other modules in the repo are experimental.
 ## Security and privacy
 
 - No generic shell command or user-supplied CLI arguments.
-- Fresh ephemeral, read-only Codex process per question.
+- When answering through Codex CLI: fresh ephemeral, read-only process per question.
 - Prompt input and output size limits, timeout, cancellation, and process-tree kill.
 - Restrictive Tauri CSP and minimum capability allowlist.
 - No auth/session scraping, `.env` runtime loading, loopback listener, MCP, or remote UI.
