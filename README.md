@@ -41,7 +41,7 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
 
 - Ask one independent question, get an answer, and the interaction is discarded. OpenFamiliar does not keep a conversation history.
 - A transparent, always-on-top pixel-art companion. Idle stays visually static; animation runs only for explicit events.
-- Quick Ask answers through the Codex CLI you already installed and signed in, unless you select Anthropic in Settings and a key is stored. OpenFamiliar does not read Codex auth storage.
+- Quick Ask answers through the Codex CLI you already installed and signed in, or through Anthropic if you select it in Settings and a key is stored. If you select Anthropic without a key, the request fails as not authenticated and does not fall back to Codex CLI. OpenFamiliar does not read Codex auth storage.
 
 **Built for:** people who already use Codex CLI and want a quiet desktop way to
 ask one question; operators who want a local-first companion with no

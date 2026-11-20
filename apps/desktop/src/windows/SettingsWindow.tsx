@@ -485,10 +485,14 @@ export function SettingsWindow() {
               No hay acceso genérico a shell, workspace ni modo agente. Puedes
               guardar una clave opcional de proveedor en el llavero del sistema,
               nunca en preferences.json ni en los logs. Si eliges Anthropic y
-              hay una clave guardada, Quick Ask la usa para responder. Si eliges
-              Anthropic y no hay clave, la petición falla (no autenticado) y no
-              sale por Codex CLI. Si eliges Codex, OpenCode o Antigravity, la
-              pregunta sale por el Codex CLI instalado.
+              hay una clave guardada, Quick Ask la usa para responder. En ese
+              caso la pregunta sale por HTTPS a api.anthropic.com y queda bajo
+              los términos y la política de privacidad de Anthropic;
+              OpenFamiliar no controla qué retiene Anthropic. El detalle está en
+              PRIVACY.md del repositorio. Si eliges Anthropic y no hay clave, la
+              petición falla (no autenticado) y no sale por Codex CLI. Si eliges
+              Codex, OpenCode o Antigravity, la pregunta sale por el Codex CLI
+              instalado.
             </p>
           </div>
         ) : null}
