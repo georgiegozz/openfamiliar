@@ -14,6 +14,10 @@ Thanks for your interest in contributing.
 7. Use Conventional Commits and SemVer for releases.
 8. Open a pull request even when working alone; keep `main` always buildable.
 
+## Development setup
+
+The workspace `rust-version` is 1.88.
+
 Local and CI commands, including how to regenerate the license inventory on
 Windows, are in [docs/development/verification.md](./docs/development/verification.md).
 The pull request checklist lives in `.github/PULL_REQUEST_TEMPLATE.md`.
@@ -40,7 +44,7 @@ docs/development/          local and CI verification, including the license inve
 - Windows 11 x64
 - Node.js 20+
 - pnpm 9.15.0 (declared by `packageManager`)
-- Rust stable with `rustfmt` and `clippy`
+- Rust 1.88+ with `rustfmt` and `clippy`
 - Python 3.12 for deterministic mascot asset checks
 - Visual Studio Build Tools 2022: Desktop development with C++
 - WebView2 Runtime

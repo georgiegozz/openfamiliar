@@ -220,10 +220,26 @@ export function SettingsWindow() {
                 <option value="agy">Antigravity CLI</option>
               </select>
               <small>
-                En esta versión Quick Ask responde solo con Codex CLI.
-                Anthropic, OpenCode y Antigravity se pueden seleccionar, pero
-                todavía no responden. Si guardas una API key de Anthropic, queda
-                solo en el llavero del sistema, nunca en preferences.json.
+                Quick Ask responde con Anthropic si lo eliges y hay una clave en
+                el llavero. OpenCode y Antigravity se pueden seleccionar, pero
+                todavía no responden; en ese caso la pregunta sale por Codex
+                CLI. Anthropic guarda la API key solo en el almacén de
+                credenciales del sistema, nunca en preferences.json. El webview
+                no hace fetch al proveedor.
+              </small>
+            </label>
+            <label className="settings-field">
+              <span>Modelo de Anthropic (no secreto)</span>
+              <input
+                value={preferences.anthropicModel}
+                maxLength={80}
+                onChange={(event) =>
+                  update("anthropicModel", event.target.value)
+                }
+              />
+              <small>
+                Predeterminado: claude-sonnet-4-5. Se envía como id de modelo,
+                no es un secreto.
               </small>
             </label>
             <label className="settings-field">
@@ -455,9 +471,9 @@ export function SettingsWindow() {
           <div className="settings-section prose-section">
             <h2>Contrato del MVP</h2>
             <p>
-              Cada pregunta inicia un proceso efímero de Codex CLI en modo
-              read-only. OpenFamiliar no conserva preguntas, respuestas ni
-              historial.
+              OpenFamiliar no conserva preguntas, respuestas ni historial. Si la
+              respuesta sale por Codex CLI, se inicia un proceso efímero en modo
+              read-only.
             </p>
             <p>
               Los logs locales contienen solamente eventos operativos y
@@ -466,9 +482,9 @@ export function SettingsWindow() {
             <p>
               No hay acceso genérico a shell, workspace ni modo agente. Puedes
               guardar una clave opcional de proveedor en el llavero del sistema,
-              nunca en preferences.json ni en los logs, pero esta versión no la
-              usa para responder: Quick Ask sigue saliendo por el Codex CLI
-              instalado.
+              nunca en preferences.json ni en los logs. Si eliges Anthropic y
+              hay una clave guardada, Quick Ask la usa para responder; si no, la
+              pregunta sigue saliendo por el Codex CLI instalado.
             </p>
           </div>
         ) : null}

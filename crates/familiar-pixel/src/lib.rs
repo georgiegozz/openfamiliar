@@ -193,7 +193,7 @@ fn resize_for_layout(image: DynamicImage, layout: Layout) -> RgbaImage {
 
 fn quantize_binary_alpha(source: &RgbaImage, colors: usize) -> RgbaImage {
     let mut raw = source.as_raw().clone();
-    for px in raw.chunks_exact_mut(4) {
+    for px in raw.as_chunks_mut::<4>().0 {
         if px[3] < ALPHA_CUTOFF {
             px[0] = 0;
             px[1] = 0;
@@ -205,7 +205,7 @@ fn quantize_binary_alpha(source: &RgbaImage, colors: usize) -> RgbaImage {
     }
     let quant = NeuQuant::new(NEUQUANT_SAMPLE, colors, &raw);
     let mut out = raw;
-    for px in out.chunks_exact_mut(4) {
+    for px in out.as_chunks_mut::<4>().0 {
         if px[3] == 0 {
             continue;
         }
