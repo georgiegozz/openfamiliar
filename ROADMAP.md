@@ -49,5 +49,14 @@ Status vocabulary is evidence-based:
    are authorized under the 2026-11-12 amendments to ADR-004 and ADR-005.
    Workspace, agent mode, MCP, ACP, and any further provider still need their
    own security/UX decision and cannot silently enter stable v0.1.
-4. macOS, Linux, voice, screen capture, marketplace, accounts, remote backend,
-   cross-device sync, repository indexing, and background agents remain deferred.
+4. Voice, screen capture, marketplace, accounts, a remote backend,
+   cross-device sync, repository indexing, and background agents remain
+   deferred. macOS and Linux desktop ports are listed under Deferred
+   platforms below; they have no target date.
+
+## Deferred platforms
+
+| Capability                                       | Status   | Release evidence                                                       |
+| ------------------------------------------------ | -------- | ---------------------------------------------------------------------- |
+| macOS desktop shell, packaging, and notarization | deferred | Intentionally outside stable Windows v0.1. No target date is promised. |
+| Linux desktop shell and packaging                | deferred | Intentionally outside stable Windows v0.1. No target date is promised. |
