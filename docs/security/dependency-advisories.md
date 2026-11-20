@@ -77,6 +77,6 @@ needs glib 0.20+ and is tied to the Linux desktop stack, which is not the
 Windows 11 product target).
 
 No cargo-deny, cargo-audit, or GitHub Actions workflow was changed in this
-follow-up. After this work lands on `main`, PR #32's advisory baseline will
-need an update so it no longer lists IDs that have been cleared (the baseline
-script fails when a listed ID disappears).
+follow-up. The advisory baseline already drops the IDs resolved here and
+keeps RUSTSEC-2026-0459 and RUSTSEC-2026-0543 with a grace period through
+2027-02-10.

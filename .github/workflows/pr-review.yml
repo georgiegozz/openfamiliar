@@ -1,0 +1,179 @@
+name: pr-review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-review-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install gitleaks
+        env:
+          GITLEAKS_URL: https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          scripts/ci/install_pinned_release.sh \
+            --url "$GITLEAKS_URL" \
+            --sha256 "$GITLEAKS_SHA256" \
+            --bin gitleaks \
+            --dest "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/gitleaks" version
+
+      - name: Scan pull request commit range with gitleaks
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${HEAD_SHA}^{commit}"
+          gitleaks detect \
+            --source . \
+            --redact \
+            --no-banner \
+            --exit-code 1 \
+            --log-opts "${BASE_SHA}..${HEAD_SHA}"
+
+      - name: Scan full git history with gitleaks
+        run: gitleaks detect --source . --redact --no-banner --exit-code 1
+
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime, development
+          allow-licenses: >-
+            0BSD, Apache-2.0, Apache-2.0 WITH LLVM-exception, BSD-2-Clause,
+            BSD-3-Clause, BSL-1.0, CC0-1.0, CDLA-Permissive-2.0, ISC, MIT,
+            MIT-0, MPL-2.0, Unicode-3.0, Unlicense, Zlib
+
+  rust-advisories:
+    name: Rust advisories and cargo deny
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable (2026-10-16)
+        with:
+          toolchain: stable
+
+      - name: Install cargo-deny and cargo-audit
+        env:
+          CARGO_DENY_URL: https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+          CARGO_DENY_SHA256: 9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f
+          # rustsec/rustsec release tag cargo-audit/v0.23.0,
+          # asset cargo-audit-x86_64-unknown-linux-musl-v0.23.0.tgz.
+          # The release does not publish a checksums file; this SHA-256 was
+          # recorded from that official asset on 2026-11-12.
+          CARGO_AUDIT_URL: https://github.com/rustsec/rustsec/releases/download/cargo-audit/v0.23.0/cargo-audit-x86_64-unknown-linux-musl-v0.23.0.tgz
+          CARGO_AUDIT_SHA256: 4f01c74ed84b2dffd0b1d37012a62cdf2a92c96e25bdf8eec7fcc0d4d3eb7811
+        run: |
+          scripts/ci/install_pinned_release.sh \
+            --url "$CARGO_DENY_URL" \
+            --sha256 "$CARGO_DENY_SHA256" \
+            --bin cargo-deny \
+            --strip-components 1 \
+            --dest "$HOME/.local/bin"
+          scripts/ci/install_pinned_release.sh \
+            --url "$CARGO_AUDIT_URL" \
+            --sha256 "$CARGO_AUDIT_SHA256" \
+            --bin cargo-audit \
+            --strip-components 1 \
+            --dest "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/cargo-deny" --version
+          "$HOME/.local/bin/cargo-audit" --version
+
+      - name: cargo deny licenses, bans, and sources
+        run: cargo deny --locked check licenses bans sources
+
+      - name: Collect rust advisory reports
+        run: |
+          set +e
+          cargo audit --json > "${RUNNER_TEMP}/cargo-audit.json"
+          audit_exit=$?
+          set -e
+          if [[ "$audit_exit" -gt 1 ]]; then
+            echo "cargo audit failed with exit ${audit_exit}" >&2
+            exit "$audit_exit"
+          fi
+          set +e
+          cargo deny --locked -f json check advisories > "${RUNNER_TEMP}/cargo-deny-advisories.json" 2>&1
+          deny_exit=$?
+          set -e
+          if [[ "$deny_exit" -gt 2 ]]; then
+            echo "cargo deny advisories failed with exit ${deny_exit}" >&2
+            exit "$deny_exit"
+          fi
+
+      - name: Test advisory baseline script
+        run: python3 -m unittest discover -s scripts/ci/tests -p 'test_*.py'
+
+      - name: Compare rust advisories with the baseline
+        run: >
+          python3 scripts/ci/check_advisory_baseline.py --ecosystem rust
+          --cargo-audit-json "${RUNNER_TEMP}/cargo-audit.json"
+          --cargo-deny-json "${RUNNER_TEMP}/cargo-deny-advisories.json"
+
+  javascript-audit:
+    name: JavaScript audit
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 9.15.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "20"
+
+      - name: Collect pnpm audit report from the lockfile
+        run: |
+          set +e
+          pnpm audit --json > "${RUNNER_TEMP}/pnpm-audit.json"
+          audit_exit=$?
+          set -e
+          if [[ ! -s "${RUNNER_TEMP}/pnpm-audit.json" ]]; then
+            echo "pnpm audit did not write a report (exit ${audit_exit})" >&2
+            exit "$audit_exit"
+          fi
+
+      - name: Compare JavaScript advisories with the baseline
+        run: >
+          python3 scripts/ci/check_advisory_baseline.py --ecosystem javascript
+          --pnpm-audit-json "${RUNNER_TEMP}/pnpm-audit.json"

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "policy": "Known IDs are printed on every CI run and are not a silent ignore. The job fails on a new ID, an expired entry (the grace period has ended), or an entry that is no longer reported. expiresOn values are a 90-day grace from 2026-11-12 (2027-02-10). All entries are linked to the tracking issue https://github.com/p3rformative/openfamiliar/issues/31 in the issue field.",
+  "recordedOn": "2026-11-12",
+  "rust": [
+    {
+      "id": "RUSTSEC-2026-0459",
+      "kind": "vulnerability",
+      "package": "libsqlite3-sys",
+      "version": "0.30.1",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/p3rformative/openfamiliar/issues/31",
+      "note": "Present in cargo-audit and cargo-deny used graph via rusqlite 0.32.1."
+    },
+    {
+      "id": "RUSTSEC-2026-0543",
+      "kind": "unmaintained",
+      "package": "chrono",
+      "version": "0.4.45",
+      "expiresOn": "2027-02-10",
+      "issue": "https://github.com/p3rformative/openfamiliar/issues/31",
+      "note": "cargo-deny reports chrono 0.4.45 as unmaintained on the used graph; cargo-audit surfaces the same ID as a warning. No safe upgrade is available. deny.toml is unchanged. 90-day grace through 2027-02-10."
+    }
+  ],
+  "javascript": [],
+  "trackingIssue": "https://github.com/p3rformative/openfamiliar/issues/31"
+}
