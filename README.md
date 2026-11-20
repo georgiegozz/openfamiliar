@@ -1,152 +1,112 @@
 <p align="center">
-  <img src="./apps/desktop/src-tauri/icons/128x128.png" alt="Perrito Tech" width="128" height="128">
+  <img src="./apps/desktop/src-tauri/icons/128x128.png" width="128" height="128" alt="Perrito Tech, the official OpenFamiliar pixel-art mascot, shown as a 128-pixel square icon.">
 </p>
 
 <h1 align="center">OpenFamiliar</h1>
 
-<p align="center">
-  <strong>A Windows pixel-art desktop companion with one-shot Codex CLI questions.</strong>
-</p>
+<p align="center"><strong>Ask once. Get an answer. It forgets.<br>
+A pixel-art desktop buddy for your Codex CLI.</strong></p>
+
+<p align="center">No conversation history, no keys in preferences, no surprises.</p>
+
+<p align="center">Windows 11 x64 only for now. The public beta installer is unsigned;
+<a href="#unsigned-installer-heres-how-to-verify">here's how to verify</a>.</p>
 
 <p align="center">
-  <a href="https://github.com/georgiegozz/openfamiliar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/georgiegozz/openfamiliar/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <img alt="License" src="https://img.shields.io/badge/code-Apache--2.0-blue.svg">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2011-0078D4.svg">
-  <img alt="Status" src="https://img.shields.io/badge/status-public%20beta-orange.svg">
+  <a href="https://github.com/p3rformative/openfamiliar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/p3rformative/openfamiliar/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/p3rformative/openfamiliar/releases"><img alt="Release" src="https://img.shields.io/github/v/release/p3rformative/openfamiliar?include_prereleases"></a>
+  <a href="https://github.com/p3rformative/openfamiliar/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/p3rformative/openfamiliar/total"></a>
+  <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri-2-24C8DB">
+  <img alt="Rust 1.80+" src="https://img.shields.io/badge/Rust-1.80%2B-orange">
+  <img alt="code Apache-2.0 · art CC BY 4.0" src="https://img.shields.io/badge/code-Apache--2.0%20%C2%B7%20art%20CC%20BY%204.0-blue">
 </p>
-
-Perrito Tech lives in a transparent always-on-top window. Click the mascot, ask
-one independent question, receive the answer from an existing authenticated
-Codex CLI installation, and discard the interaction. There is no conversation
-history, workspace context, memory, autonomous execution, or API-key storage.
 
 > OpenFamiliar is an independent open-source project and is not affiliated with,
 > sponsored by, or endorsed by OpenAI or any other tool vendor.
 
-![OpenFamiliar Quick Ask preview](./docs/assets/openfamiliar-quick-ask.png)
+<!-- TODO: replace this placeholder with a real 5–8 s hero GIF: 480 px wide, under 3 MB, captured from the actual Windows desktop app. Do not use a simulated or generated recording. -->
+<p align="center"><em>Hero clip coming soon — a real 5–8 second recording of the Windows app (480 px, under 3 MB). This is a placeholder, not a simulated demo.</em></p>
 
-## Public beta v0.1.0
+<p align="center">
+  <img src="./docs/assets/openfamiliar-quick-ask.png" alt="Still preview of the OpenFamiliar Quick Ask window on Windows, with Perrito Tech beside a one-shot question field.">
+  <br>
+  <img src="./mascots/perrito-tech/assets/perrito-tech-spritesheet.png" width="160" height="160" alt="Perrito Tech official 4 by 4 spritesheet in the default teal accent palette, sixteen 64-pixel frames.">
+  <img src="./mascots/perrito-tech/assets/variants/perrito-tech-midnight.png" width="160" height="160" alt="Perrito Tech official spritesheet with midnight-blue state-prop accents.">
+  <img src="./mascots/perrito-tech/assets/variants/perrito-tech-burgundy.png" width="160" height="160" alt="Perrito Tech official spritesheet with burgundy state-prop accents.">
+  <br>
+  <sub>Teal (default), midnight, and burgundy accent palettes. He stays put until you ask—no pacing, no side-eye.</sub>
+</p>
 
-| Capability                                          | Status                                          |
-| --------------------------------------------------- | ----------------------------------------------- |
-| Windows 11 x64 Tauri desktop                        | Implemented; local automated validation         |
-| Perrito Tech 64×64 frames at 128 px default         | Implemented; original CC BY 4.0 art             |
-| Static idle and event-only animation                | Implemented; no random movement or eye tracking |
-| Teal, midnight, and burgundy prop-accent palettes   | Implemented; deterministic generated variants   |
-| Transparent mascot and separate Settings window     | Implemented                                     |
-| One-shot Quick Ask through Codex CLI                | Implemented with fake-CLI tests                 |
-| Timeout, cancellation, process-tree cleanup         | Implemented with fake-CLI tests                 |
-| System tray and click-through recovery              | Implemented                                     |
-| Non-sensitive preferences and monitor-safe position | Implemented with unit tests                     |
-| MSI and NSIS installers                             | Validated for the unsigned v0.1.0 public beta   |
-| Clean-user Windows smoke test                       | Passed on a separate Windows computer           |
+## Why
 
-The beta runtime is local-first and idle-offline. It does not read Codex auth
-storage; it invokes the official CLI already installed and authenticated by the
-operator. Questions and answers remain in memory only. Operational logs contain
-event categories, not content.
+- Ask one independent question, get an answer, and the interaction is discarded. OpenFamiliar does not keep a conversation history.
+- A transparent, always-on-top pixel-art companion. Idle stays visually static; animation runs only for explicit events.
+- Quick Ask uses the Codex CLI you already installed and signed in. OpenFamiliar does not read Codex auth storage.
 
-## Download
+## Download and quick start
 
-Download the official `v0.1.0` public beta only from
-[GitHub Releases](https://github.com/georgiegozz/openfamiliar/releases/tag/v0.1.0).
-Do not download OpenFamiliar binaries from third-party sites.
+1. Download the official `v0.1.0` public beta only from [GitHub Releases](https://github.com/p3rformative/openfamiliar/releases/tag/v0.1.0). Do not download OpenFamiliar binaries from third-party sites.
+2. Verify the unsigned installer (checksum and attestation below), then install.
+3. Start OpenFamiliar, click Perrito Tech, and ask one question. A real answer requires Codex CLI installed and authenticated on the same machine.
 
-The initial beta will be unsigned, so Windows may display a SmartScreen warning.
-Each release will include `SHA256SUMS.txt`; public-repository builds also generate
+<p id="unsigned-installer-heres-how-to-verify"></p>
+
+<details>
+<summary>Unsigned installer, here's how to verify</summary>
+
+The `v0.1.0` public beta is unsigned, so Windows may display a SmartScreen warning.
+Each release includes `SHA256SUMS.txt`; public-repository builds also generate
 GitHub artifact attestations. Verify a downloaded installer with:
 
 ```powershell
 Get-FileHash .\OpenFamiliar_*.exe -Algorithm SHA256
-gh attestation verify .\OpenFamiliar_*.exe --repo georgiegozz/openfamiliar
+gh attestation verify .\OpenFamiliar_*.exe --repo p3rformative/openfamiliar
 ```
 
 Unsigned does not mean unverified: compare the SHA-256 value with the release
 checksum and install only when both the repository and artifact are trusted.
 
-## Experimental / Future
+</details>
 
-The monorepo retains scaffolds for other providers, workspaces, permissioned
-agents, MCP, Creator Studio, VS Code integration, advanced packs, and shared core
-services. They are not initialized or visible in the stable Windows MVP and must
-not be described as finished product capabilities. See [ROADMAP.md](./ROADMAP.md).
+## How it works
 
-## Repository Layout
+You click the mascot, type one question, and OpenFamiliar starts a fresh
+read-only Codex CLI process. The answer appears in Quick Ask. The prompt and
+answer stay in memory only for that request; the process then exits. Optional
+provider keys, if you add one in Settings, are stored in the OS keychain, never
+in `preferences.json` or logs. One-shot answers on this release still go through
+Codex CLI.
 
-```text
-apps/desktop/              stable Windows Tauri + React application
-packages/mascot-runtime/   pixel-art animation runtime
-packages/mascot-sdk/       familiar pack types
-packages/provider-sdk/     one-shot provider contract + experimental contract
-mascots/perrito-tech/      canonical spritesheet, manifest, and art license
-crates/                    experimental/future shared Rust services
-adapters/                  experimental/future provider and CLI scaffolds
-docs/                      ADRs, architecture map, verification, playbooks, security, testing, and guides
-docs/development/          local and CI verification, including the license inventory
-.agents/skills/            repo-local reusable skills
+```mermaid
+flowchart LR
+  A[Click mascot] --> B[Ask one question]
+  B --> C[Fresh Codex CLI process]
+  C --> D[Answer in Quick Ask]
+  D --> E[Process exits; nothing is saved]
 ```
 
-## Prerequisites
+## Status
 
-- Windows 11 x64
-- Node.js 20+
-- pnpm 9.15.0 (declared by `packageManager`)
-- Rust stable with `rustfmt` and `clippy`
-- Python 3.12 for deterministic mascot asset checks
-- Visual Studio Build Tools 2022: Desktop development with C++
-- WebView2 Runtime
-- Codex CLI installed and authenticated for real Quick Ask use
+<details>
+<summary>Public beta v0.1.0 and roadmap</summary>
 
-## Develop
+The Windows 11 x64 desktop, Perrito Tech sprites (CC BY 4.0), static idle with
+event-only animation, teal/midnight/burgundy accents, Settings, tray,
+click-through recovery, preferences, monitor-safe position, timeout/cancel, OS
+keychain for optional provider secrets, and unsigned MSI/NSIS installers are
+implemented and tested as described in [ROADMAP.md](./ROADMAP.md). Quick Ask
+answers through Codex CLI, with fake-CLI tests. A clean-user smoke test has
+passed on a separate Windows computer.
 
-```powershell
-# Run from the repository root.
-corepack enable
-corepack prepare pnpm@9.15.0 --activate
-pnpm install --frozen-lockfile
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r .\scripts\assets\requirements.txt
-pnpm --filter @openfamiliar/desktop tauri dev
-```
+Additional one-shot providers (Anthropic, OpenCode, Antigravity) are authorized
+as follow-up work and are not how this release answers questions. Monorepo
+scaffolds for other providers, workspaces, agents, MCP, Creator Studio, VS Code,
+and advanced packs are not initialized or visible in the stable Windows MVP and
+must not be described as finished product capabilities.
 
-Browser-only UI preview uses a non-network mock and cannot invoke Codex:
+</details>
 
-```powershell
-pnpm --filter @openfamiliar/desktop dev
-```
-
-## Validate
-
-Automated tests never call the real Codex service or consume quota.
-
-```powershell
-pnpm format:check
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm assets:check
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-pnpm validate:packs
-pnpm licenses:audit
-```
-
-See [verification.md](./docs/development/verification.md) for the full Windows and Linux notes and for what each CI job runs.
-
-## Build Windows Installers
-
-```powershell
-pnpm --filter @openfamiliar/desktop tauri build
-```
-
-Unsigned MSI and NSIS artifacts are produced below `target/release/bundle/`.
-The source is suitable for a pre-1.0 public beta after the checks above pass. A
-public binary must be signed or explicitly identified as an unsigned pre-release,
-and it must pass the clean-user checklist in
-[WINDOWS_MVP_SMOKE_TEST.md](./docs/testing/WINDOWS_MVP_SMOKE_TEST.md).
-
-## Security and Privacy
+## Security and privacy
 
 - No generic shell command or user-supplied CLI arguments.
 - Fresh ephemeral, read-only Codex process per question.
@@ -155,8 +115,25 @@ and it must pass the clean-user checklist in
 - No auth/session scraping, `.env` runtime loading, loopback listener, MCP, or remote UI.
 - No prompt, answer, credential, token, or raw process output in logs.
 
-See [ADR-009](./docs/adr/ADR-009-windows-one-shot-mvp.md) and the
-[security boundary playbook](./docs/agent-playbooks/security-boundaries.md).
+See the [privacy policy](./PRIVACY.md), [ADR-009](./docs/adr/ADR-009-windows-one-shot-mvp.md),
+and the [security boundary playbook](./docs/agent-playbooks/security-boundaries.md).
+
+## Contributing
+
+Setup, validation, and installer builds are in [CONTRIBUTING.md](./CONTRIBUTING.md).
+Pack types live in [`packages/mascot-sdk`](./packages/mascot-sdk).
+Perrito Tech artwork is credited as “Perrito Tech — OpenFamiliar contributors”
+(CC BY 4.0); see the [asset notice](./mascots/perrito-tech/NOTICE).
+
+**Built for:** people who already use Codex CLI and want a quiet desktop way to
+ask one question; operators who want a local-first companion with no
+OpenFamiliar account, cloud backend, or telemetry; and contributors who build
+or validate familiar packs with `mascot-sdk`.
+
+Questions and patches go through [Issues](https://github.com/p3rformative/openfamiliar/issues)
+and pull requests. Issues labeled
+[good first issue](https://github.com/p3rformative/openfamiliar/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+are marked for newcomers (none are open at the time of this writing).
 
 ## License
 
