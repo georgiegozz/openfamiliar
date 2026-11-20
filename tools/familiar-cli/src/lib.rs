@@ -374,7 +374,12 @@ pub fn inspect_archive(path: &Path) -> Result<()> {
     println!("Archive: {} ({} files)", path.display(), archive.len());
     for i in 0..archive.len() {
         let f = archive.by_index(i)?;
-        println!(" - {} ({} bytes)", f.name(), f.size());
+        // zip 9.x: name() is a Result because the header may not be valid UTF-8.
+        let name = f
+            .name()
+            .map(|n| n.into_owned())
+            .unwrap_or_else(|_| String::from_utf8_lossy(f.name_raw()).into_owned());
+        println!(" - {} ({} bytes)", name, f.size());
     }
     Ok(())
 }

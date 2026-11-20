@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Bump the desktop Tauri crate from 2.11.5 to 2.11.6 (GHSA-w28w-mhc8-qvjv). This is the minimum patched 2.11 release; 2.12 was not taken because 2.12.0 changes Android `$VIDEO` / `video_dir()` and `tauri-build` 2.7 declares rust-version 1.90. `@tauri-apps/cli` moves to 2.11.5 to stay on the 2.11 line with `@tauri-apps/api` 2.11.1 and `tauri-build` 2.6.3.
+- Raise workspace `rust-version` from 1.80 to 1.88 so `familiar-cli` can take `zip` 9.7.3 with only the `deflate` feature (the floor that patches RUSTSEC-2026-0369 / 0367 / 0368 / 0429 is 9.0.1). 9.7.3 is the newest 9.x that still declares rust-version 1.88; 9.8.0 would require 1.89. Default `zip` features were disabled because they pull `aes` 0.9.4 (rust-version 1.89). `zstd` / `zstd-safe` / `zstd-sys` leave the graph with that change.
+- Refresh transitive Rust TLS and QUIC crates (`rustls` 0.23.46, `rustls-webpki`, `webpki-roots`, `quinn` / `quinn-proto` / `quinn-udp` 0.5.16), `tokio` 1.54.1, and `rustix` 1.1.6 to clear the other patched advisories in issue #31 plus RUSTSEC-2026-0538 and unsound RUSTSEC-2026-0486 found by a later `cargo audit`.
+- Bump Vite to 6.4.6 and override vulnerable transitive JavaScript packages listed in issue #31 (`nanoid`, `postcss`, `browserslist`, `source-map-js`, `launch-editor`).
+- `rusqlite` 0.32.1 / `libsqlite3-sys` 0.30.1 (RUSTSEC-2026-0459) stays open: the first `rusqlite` that takes `libsqlite3-sys` >= 0.39 is 0.41.0, which declares rust-version 1.89. See `docs/security/dependency-advisories.md`.
+
 ### Added
 
 - Agent workflow documentation: module and crate map, local and CI
