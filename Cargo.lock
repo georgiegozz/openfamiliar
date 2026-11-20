@@ -987,6 +987,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "familiar-anthropic"
+version = "0.1.0"
+dependencies = [
+ "familiar-credentials",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "familiar-cli"
 version = "0.1.0"
 dependencies = [
@@ -2584,6 +2595,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "directories",
+ "familiar-anthropic",
  "familiar-cli",
  "familiar-credentials",
  "regex",

@@ -51,6 +51,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::detect_codex,
             commands::ask_codex,
+            commands::ask_one_shot,
             commands::cancel_codex,
             commands::get_preferences,
             commands::update_preferences,
