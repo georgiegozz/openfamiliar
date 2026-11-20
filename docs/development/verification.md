@@ -135,6 +135,12 @@ Permissions on this job are `contents: read` and `pull-requests: read`.
 
 ### `.github/workflows/pr-review.yml`
 
+It scans secrets, reviews new dependency changes in the PR, and compares
+lockfile advisories with a known baseline. The baseline comparison fails
+only on new, expired, or stale IDs. Other jobs still fail on secret leaks,
+high-severity dependency changes or disallowed licenses, and `cargo deny`
+licenses, bans, and sources.
+
 A second pull-request workflow. It runs only on `pull_request` to `main`
 (never `pull_request_target`), with workflow `permissions: contents: read`,
 `persist-credentials: false` on every checkout, and concurrency per pull
@@ -183,8 +189,9 @@ advisory jobs.
 5. `cargo audit --json` and `cargo deny --locked -f json check advisories`,
    compared to `scripts/ci/advisory-baseline.json`. Known IDs are printed.
    The job fails on a new ID, an expired baseline entry (the grace period
-   has ended), or a stale entry. The baseline is linked to the tracking
-   issue in the `issue` field (https://github.com/p3rformative/openfamiliar/issues/31).
+   has ended), or a stale entry. The baseline is linked to
+   [issue #31](https://github.com/p3rformative/openfamiliar/issues/31) in
+   the `issue` field.
 
 **`javascript-audit`** (`ubuntu-24.04`):
 
@@ -207,8 +214,6 @@ pnpm audit --json > /tmp/pnpm-audit.json || true
 python3 scripts/ci/check_advisory_baseline.py --ecosystem javascript \
   --pnpm-audit-json /tmp/pnpm-audit.json
 ```
-
-### Other workflow, not part of the PR CI gate
 
 ### Other workflow, not part of the PR CI gate
 

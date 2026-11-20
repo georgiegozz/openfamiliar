@@ -14,9 +14,9 @@ every run. The job fails when:
 - a baseline entry is no longer reported and should be removed
 
 `expiresOn` dates are a maintainer decision. The grace period is tracked by
-the issue URL in the `issue` field
-(https://github.com/p3rformative/openfamiliar/issues/31). Do not add `ignore` entries in `deny.toml` for the same IDs; that
-would hide them from `cargo deny` itself.
+[issue #31](https://github.com/p3rformative/openfamiliar/issues/31) in the
+`issue` field. Do not add `ignore` entries in `deny.toml` for the same IDs;
+that would hide them from `cargo deny` itself.
 
 ## Pinned release installer
 
