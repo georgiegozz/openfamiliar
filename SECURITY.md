@@ -19,9 +19,8 @@ acknowledged within seven days.
 ## Stable MVP security boundary
 
 - The Windows desktop has no OpenFamiliar cloud backend or telemetry.
-- A Quick Ask starts one fresh Codex CLI process only after an explicit question.
-- The process is read-only and ephemeral, with input/output limits, timeout,
-  cancellation, and process-tree cleanup.
+- After an explicit question, Quick Ask either starts one fresh Codex CLI process or, if Anthropic is selected and a key is stored, sends one HTTPS request to api.anthropic.com. If Anthropic is selected without a key, the request fails and no Codex process is started.
+- When the answer goes through Codex CLI, the process is read-only and ephemeral, with input/output limits, timeout, cancellation, and process-tree cleanup. The Anthropic path has input/output limits and a timeout; it is not cancelled by cancel_codex.
 - OpenFamiliar does not read Codex authentication files, browser sessions,
   cookies, API keys, `.env` files, or workspace content.
 - Questions, answers, stdout, and stderr are not written to application logs.
