@@ -10,6 +10,9 @@ import {
   type ProviderStatus,
 } from "../lib/types";
 
+const AFFILIATION_DISCLAIMER =
+  "OpenFamiliar is an independent open-source project and is not affiliated with, sponsored by, or endorsed by OpenAI, Google, xAI, Anthropic, Microsoft, Amazon, or their respective products.";
+
 const TABS = [
   "General",
   "Codex",
@@ -477,6 +480,7 @@ export function SettingsWindow() {
               Codex CLI es una dependencia externa: debe estar instalado y
               autenticado por el operador.
             </p>
+            <p>{AFFILIATION_DISCLAIMER}</p>
           </div>
         ) : null}
 
