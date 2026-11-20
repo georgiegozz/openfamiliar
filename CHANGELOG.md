@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Bump the desktop Tauri crate to 2.11.6 (GHSA-w28w-mhc8-qvjv), raise the workspace `rust-version` to 1.88, and patch the issue #31 advisories that have a safe upgrade path. `rusqlite` / `libsqlite3-sys` (RUSTSEC-2026-0459) stays open. Version choices and remaining issues are in `docs/security/dependency-advisories.md`.
+
 ### Added
 
 - Maintainer checklist and a manual, inert GitHub Actions workflow for a

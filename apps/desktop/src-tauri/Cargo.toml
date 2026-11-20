@@ -10,7 +10,7 @@ description = "OpenFamiliar Desktop (Tauri)"
 tauri-build = { version = "=2.6.3", features = [] }
 
 [dependencies]
-tauri = { version = "=2.11.5", features = ["tray-icon"] }
+tauri = { version = "=2.11.6", features = ["tray-icon"] }
 tauri-plugin-autostart = "=2.5.1"
 serde = { workspace = true }
 serde_json = { workspace = true }
