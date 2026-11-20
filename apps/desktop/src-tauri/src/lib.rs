@@ -18,6 +18,7 @@ pub struct AppState {
     pub logger: SafeLogger,
     pub mascot_expanded: AtomicBool,
     pub mascots_dir: std::path::PathBuf,
+    pub credentials: familiar_credentials::KeyringSecretStore,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -45,6 +46,7 @@ pub fn run() {
             logger,
             mascot_expanded: AtomicBool::new(false),
             mascots_dir: paths.mascots_dir.clone(),
+            credentials: crate::services::credentials::production_store(),
         })
         .invoke_handler(tauri::generate_handler![
             commands::detect_codex,
@@ -67,6 +69,9 @@ pub fn run() {
             commands::set_active_mascot,
             commands::save_editor_mascot,
             commands::get_editor_mascot,
+            commands::set_provider_secret,
+            commands::provider_secret_configured,
+            commands::delete_provider_secret,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

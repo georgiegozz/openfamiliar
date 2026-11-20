@@ -8,6 +8,13 @@ export type { OneShotRequest, OneShotResult, ProviderStatus };
 
 export type MascotPalette = "teal" | "midnight" | "burgundy";
 
+export type ProviderId = "codex" | "anthropic" | "opencode" | "agy";
+
+export interface ProviderSecretStatus {
+  providerId: string;
+  configured: boolean;
+}
+
 export interface SavedPosition {
   x: number;
   y: number;
@@ -28,6 +35,7 @@ export interface AppPreferences {
   codexPath?: string;
   timeoutSeconds: number;
   activeMascotId: string;
+  activeProviderId: ProviderId;
 }
 
 export interface BackendError {
@@ -57,6 +65,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   launchAtStartup: false,
   timeoutSeconds: 120,
   activeMascotId: "perrito-tech",
+  activeProviderId: "codex",
 };
 
 export const BUNDLED_MASCOT_ID = "perrito-tech";

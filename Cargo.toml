@@ -8,6 +8,7 @@ members = [
   "crates/familiar-agent-bridge",
   "crates/familiar-mcp",
   "crates/familiar-pixel",
+  "crates/familiar-credentials",
   "apps/desktop/src-tauri",
   "tools/familiar-cli",
 ]
@@ -19,6 +20,7 @@ default-members = [
   "crates/familiar-agent-bridge",
   "crates/familiar-mcp",
   "crates/familiar-pixel",
+  "crates/familiar-credentials",
   "tools/familiar-cli",
 ]
 

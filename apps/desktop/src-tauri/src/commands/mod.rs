@@ -2,6 +2,7 @@ use crate::domain::{
     AppPreferences, CommandError, ErrorKind, OneShotRequest, OneShotResult, ProviderStatus,
     SavedPosition,
 };
+use crate::services::credentials::is_settings_window;
 use crate::services::monitor_position::restore_mascot_position;
 use crate::AppState;
 use std::sync::atomic::Ordering;
@@ -584,6 +585,88 @@ pub fn get_editor_mascot(
     })
 }
 
+fn require_settings_window_label(label: &str) -> Result<(), CommandError> {
+    if !is_settings_window(label) {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            "secret commands are only accepted from the settings window",
+        ));
+    }
+    Ok(())
+}
+
+fn require_settings_window(window: &tauri::WebviewWindow) -> Result<(), CommandError> {
+    require_settings_window_label(window.label())
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetProviderSecretRequest {
+    pub provider_id: String,
+    pub secret: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderSecretStatus {
+    pub provider_id: String,
+    pub configured: bool,
+}
+
+#[tauri::command]
+pub fn set_provider_secret(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    request: SetProviderSecretRequest,
+) -> Result<ProviderSecretStatus, CommandError> {
+    require_settings_window(&window)?;
+    use familiar_credentials::SecretStore;
+    state
+        .credentials
+        .set_secret(&request.provider_id, &request.secret)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(ProviderSecretStatus {
+        provider_id: request.provider_id,
+        configured: true,
+    })
+}
+
+#[tauri::command]
+pub fn provider_secret_configured(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    provider_id: String,
+) -> Result<ProviderSecretStatus, CommandError> {
+    require_settings_window(&window)?;
+    use familiar_credentials::SecretStore;
+    let configured = state
+        .credentials
+        .is_configured(&provider_id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(ProviderSecretStatus {
+        provider_id,
+        configured,
+    })
+}
+
+#[tauri::command]
+pub fn delete_provider_secret(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    provider_id: String,
+) -> Result<ProviderSecretStatus, CommandError> {
+    require_settings_window(&window)?;
+    use familiar_credentials::SecretStore;
+    state
+        .credentials
+        .delete_secret(&provider_id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(ProviderSecretStatus {
+        provider_id,
+        configured: false,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -618,5 +701,12 @@ mod tests {
             required_autostart_change(true, false),
             Some(AutostartChange::Disable)
         );
+    }
+
+    #[test]
+    fn secret_commands_require_the_settings_label() {
+        assert!(require_settings_window_label("settings").is_ok());
+        assert!(require_settings_window_label("mascot").is_err());
+        assert!(require_settings_window_label("quick-ask").is_err());
     }
 }

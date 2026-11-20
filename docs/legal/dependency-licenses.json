@@ -596,6 +596,11 @@
       "license": "Apache-2.0"
     },
     {
+      "name": "familiar-credentials",
+      "version": "0.1.0",
+      "license": "Apache-2.0"
+    },
+    {
       "name": "familiar-mcp",
       "version": "0.1.0",
       "license": "Apache-2.0"

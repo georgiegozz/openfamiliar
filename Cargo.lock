@@ -1129,6 +1129,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "familiar-credentials"
+version = "0.1.0"
+dependencies = [
+ "keyring",
+ "regex",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "familiar-mcp"
 version = "0.1.0"
 dependencies = [
@@ -2695,6 +2704,7 @@ dependencies = [
  "base64 0.22.1",
  "directories",
  "familiar-cli",
+ "familiar-credentials",
  "regex",
  "serde",
  "serde_json",
