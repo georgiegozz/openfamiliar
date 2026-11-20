@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "typecheck": "tsc -b --pretty false",
-    "test": "node --import tsx --test src/lib/states.test.ts src/features/quick-ask/oneShotMachine.test.ts src/features/mascot/localMascotRuntime.test.ts src/features/mascot-editor/model.test.ts"
+    "test": "node --import tsx --test src/lib/states.test.ts src/features/quick-ask/oneShotMachine.test.ts src/features/mascot/localMascotRuntime.test.ts src/features/mascot-editor/model.test.ts src/lib/updater.test.ts"
   },
   "dependencies": {
     "@openfamiliar/mascot-runtime": "workspace:*",
@@ -20,6 +20,7 @@
   "devDependencies": {
     "@tauri-apps/api": "2.11.1",
     "@tauri-apps/cli": "2.11.5",
+    "@tauri-apps/plugin-updater": "2.12.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "4.7.0",
