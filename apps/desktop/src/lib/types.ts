@@ -8,6 +8,13 @@ export type { OneShotRequest, OneShotResult, ProviderStatus };
 
 export type MascotPalette = "teal" | "midnight" | "burgundy";
 
+export type ProviderId = "codex" | "anthropic" | "opencode" | "agy";
+
+export interface ProviderSecretStatus {
+  providerId: string;
+  configured: boolean;
+}
+
 export interface SavedPosition {
   x: number;
   y: number;
@@ -27,6 +34,8 @@ export interface AppPreferences {
   launchAtStartup: boolean;
   codexPath?: string;
   timeoutSeconds: number;
+  activeMascotId: string;
+  activeProviderId: ProviderId;
 }
 
 export interface BackendError {
@@ -55,4 +64,40 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   language: "es-MX",
   launchAtStartup: false,
   timeoutSeconds: 120,
+  activeMascotId: "perrito-tech",
+  activeProviderId: "codex",
 };
+
+export const BUNDLED_MASCOT_ID = "perrito-tech";
+
+export interface LocalMascotInfo {
+  id: string;
+  name: string;
+}
+
+export interface LocalMascotRuntime {
+  id: string;
+  name: string;
+  sheetPngBase64: string;
+  frameWidth: number;
+  frameHeight: number;
+  columns: number;
+  rows: number;
+  animations: Record<string, { frames: number[]; fps: number; loop: boolean }>;
+}
+
+export interface EditorMascot {
+  runtime: LocalMascotRuntime;
+  license: string;
+  personality: string;
+}
+
+export interface EditorSaveRequest {
+  existingId?: string;
+  name: string;
+  license: string;
+  personality: string;
+  data: number[];
+  fps: number;
+  animations: Record<string, { frames: number[]; fps: number; loop: boolean }>;
+}

@@ -7,6 +7,7 @@ pub struct AppPaths {
     pub config_path: PathBuf,
     pub log_dir: PathBuf,
     pub neutral_work_dir: PathBuf,
+    pub mascots_dir: PathBuf,
 }
 
 impl AppPaths {
@@ -19,6 +20,7 @@ impl AppPaths {
             config_path: data_dir.join("preferences.json"),
             log_dir: data_dir.join("logs"),
             neutral_work_dir: cache_dir.join("codex-empty-workdir"),
+            mascots_dir: data_dir.join("mascots"),
         })
     }
 
@@ -28,6 +30,7 @@ impl AppPaths {
         }
         fs::create_dir_all(&self.log_dir).map_err(|error| error.to_string())?;
         fs::create_dir_all(&self.neutral_work_dir).map_err(|error| error.to_string())?;
+        fs::create_dir_all(&self.mascots_dir).map_err(|error| error.to_string())?;
         Ok(())
     }
 }

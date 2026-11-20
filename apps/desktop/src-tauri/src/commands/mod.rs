@@ -2,6 +2,7 @@ use crate::domain::{
     AppPreferences, CommandError, ErrorKind, OneShotRequest, OneShotResult, ProviderStatus,
     SavedPosition,
 };
+use crate::services::credentials::is_settings_window;
 use crate::services::monitor_position::restore_mascot_position;
 use crate::AppState;
 use std::sync::atomic::Ordering;
@@ -69,6 +70,7 @@ pub fn update_preferences(
             .map_err(|error| internal_error(error.to_string()))?;
     }
     set_mascot_expanded_internal(&app, &state, state.mascot_expanded.load(Ordering::SeqCst))?;
+    let _ = app.emit("preferences:changed", &saved);
     Ok(saved)
 }
 
@@ -352,6 +354,319 @@ pub fn set_always_on_top_internal(
         .map_err(internal_error)
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalMascotInfoDto {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportMascotRequest {
+    pub name: String,
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalMascotRuntimeDto {
+    pub id: String,
+    pub name: String,
+    pub sheet_png_base64: String,
+    pub frame_width: u32,
+    pub frame_height: u32,
+    pub columns: u32,
+    pub rows: u32,
+    pub animations: std::collections::BTreeMap<String, familiar_cli::AnimationDefinition>,
+}
+
+#[tauri::command]
+pub fn import_mascot_image(
+    state: State<'_, AppState>,
+    request: ImportMascotRequest,
+) -> Result<LocalMascotInfoDto, CommandError> {
+    if request.data.len() > familiar_cli::MAX_IMPORT_BYTES {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            format!(
+                "image exceeds the {} byte limit",
+                familiar_cli::MAX_IMPORT_BYTES
+            ),
+        ));
+    }
+    let name = request.name.trim();
+    if name.is_empty() || name.len() > 80 {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            "mascot name is required",
+        ));
+    }
+    let info =
+        familiar_cli::import_bytes_as_local_mascot(&state.mascots_dir, name, &request.data, 64)
+            .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(LocalMascotInfoDto {
+        id: info.id,
+        name: info.name,
+    })
+}
+
+#[tauri::command]
+pub fn list_local_mascots(
+    state: State<'_, AppState>,
+) -> Result<Vec<LocalMascotInfoDto>, CommandError> {
+    let list = familiar_cli::list_local_mascots(&state.mascots_dir)
+        .map_err(|error| internal_error(error.to_string()))?;
+    Ok(list
+        .into_iter()
+        .map(|info| LocalMascotInfoDto {
+            id: info.id,
+            name: info.name,
+        })
+        .collect())
+}
+
+fn local_mascot_runtime(
+    mascots_dir: &std::path::Path,
+    id: &str,
+) -> Result<LocalMascotRuntimeDto, CommandError> {
+    if id == familiar_cli::BUNDLED_MASCOT_ID {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            "bundled mascot is served from the app bundle",
+        ));
+    }
+    let (dest, manifest) = familiar_cli::load_validated_pack(mascots_dir, id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let png = familiar_cli::read_validated_sheet(mascots_dir, id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let _ = dest;
+    let sheet = manifest
+        .sprite_sheet
+        .unwrap_or(familiar_cli::SpriteSheetDefinition {
+            asset: familiar_cli::SPRITESHEET_REL.to_string(),
+            frame_width: 64,
+            frame_height: 64,
+            columns: 4,
+            rows: 4,
+        });
+    Ok(LocalMascotRuntimeDto {
+        id: manifest.id,
+        name: manifest.name,
+        sheet_png_base64: base64::Engine::encode(&base64::engine::general_purpose::STANDARD, png),
+        frame_width: sheet.frame_width,
+        frame_height: sheet.frame_height,
+        columns: sheet.columns,
+        rows: sheet.rows,
+        animations: manifest.animations,
+    })
+}
+
+#[tauri::command]
+pub fn get_mascot_sheet_png(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<Option<String>, CommandError> {
+    if id == familiar_cli::BUNDLED_MASCOT_ID {
+        return Ok(None);
+    }
+    let bytes = familiar_cli::read_validated_sheet(&state.mascots_dir, &id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(Some(base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        bytes,
+    )))
+}
+
+#[tauri::command]
+pub fn get_local_mascot_runtime(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<LocalMascotRuntimeDto, CommandError> {
+    local_mascot_runtime(&state.mascots_dir, &id)
+}
+
+#[tauri::command]
+pub fn set_active_mascot(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<AppPreferences, CommandError> {
+    if id != familiar_cli::BUNDLED_MASCOT_ID {
+        let _ = familiar_cli::load_validated_pack(&state.mascots_dir, &id)
+            .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    }
+    let mut preferences = state.preferences.get();
+    preferences.active_mascot_id = id;
+    let saved = state
+        .preferences
+        .replace(preferences)
+        .map_err(internal_error)?;
+    let _ = app.emit("preferences:changed", &saved);
+    Ok(saved)
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorSaveDto {
+    pub existing_id: Option<String>,
+    pub name: String,
+    pub license: String,
+    pub personality: String,
+    pub data: Vec<u8>,
+    pub fps: f32,
+    pub animations: std::collections::BTreeMap<String, familiar_cli::AnimationDefinition>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditorMascotDto {
+    pub runtime: LocalMascotRuntimeDto,
+    pub license: String,
+    pub personality: String,
+}
+
+#[tauri::command]
+pub fn save_editor_mascot(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    request: EditorSaveDto,
+) -> Result<LocalMascotInfoDto, CommandError> {
+    if request.data.len() > familiar_cli::MAX_IMPORT_BYTES {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            format!(
+                "image exceeds the {} byte limit",
+                familiar_cli::MAX_IMPORT_BYTES
+            ),
+        ));
+    }
+    let existing = request.existing_id.as_deref().filter(|id| !id.is_empty());
+    let info = familiar_cli::save_editor_mascot(
+        &state.mascots_dir,
+        familiar_cli::EditorSaveRequest {
+            existing_id: existing,
+            name: &request.name,
+            license: &request.license,
+            personality: &request.personality,
+            png: &request.data,
+            fps: request.fps,
+            animations: request.animations,
+        },
+    )
+    .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let mut preferences = state.preferences.get();
+    preferences.active_mascot_id = info.id.clone();
+    let saved = state
+        .preferences
+        .replace(preferences)
+        .map_err(internal_error)?;
+    let _ = app.emit("preferences:changed", &saved);
+    Ok(LocalMascotInfoDto {
+        id: info.id,
+        name: info.name,
+    })
+}
+
+#[tauri::command]
+pub fn get_editor_mascot(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<EditorMascotDto, CommandError> {
+    let runtime = local_mascot_runtime(&state.mascots_dir, &id)?;
+    let (_, manifest) = familiar_cli::load_validated_pack(&state.mascots_dir, &id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    let personality = familiar_cli::read_validated_personality(&state.mascots_dir, &id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(EditorMascotDto {
+        runtime,
+        license: manifest.license,
+        personality,
+    })
+}
+
+fn require_settings_window_label(label: &str) -> Result<(), CommandError> {
+    if !is_settings_window(label) {
+        return Err(CommandError::new(
+            ErrorKind::InvalidRequest,
+            "secret commands are only accepted from the settings window",
+        ));
+    }
+    Ok(())
+}
+
+fn require_settings_window(window: &tauri::WebviewWindow) -> Result<(), CommandError> {
+    require_settings_window_label(window.label())
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetProviderSecretRequest {
+    pub provider_id: String,
+    pub secret: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderSecretStatus {
+    pub provider_id: String,
+    pub configured: bool,
+}
+
+#[tauri::command]
+pub fn set_provider_secret(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    request: SetProviderSecretRequest,
+) -> Result<ProviderSecretStatus, CommandError> {
+    require_settings_window(&window)?;
+    use familiar_credentials::SecretStore;
+    state
+        .credentials
+        .set_secret(&request.provider_id, &request.secret)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(ProviderSecretStatus {
+        provider_id: request.provider_id,
+        configured: true,
+    })
+}
+
+#[tauri::command]
+pub fn provider_secret_configured(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    provider_id: String,
+) -> Result<ProviderSecretStatus, CommandError> {
+    require_settings_window(&window)?;
+    use familiar_credentials::SecretStore;
+    let configured = state
+        .credentials
+        .is_configured(&provider_id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(ProviderSecretStatus {
+        provider_id,
+        configured,
+    })
+}
+
+#[tauri::command]
+pub fn delete_provider_secret(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    provider_id: String,
+) -> Result<ProviderSecretStatus, CommandError> {
+    require_settings_window(&window)?;
+    use familiar_credentials::SecretStore;
+    state
+        .credentials
+        .delete_secret(&provider_id)
+        .map_err(|error| CommandError::new(ErrorKind::InvalidRequest, error.to_string()))?;
+    Ok(ProviderSecretStatus {
+        provider_id,
+        configured: false,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -386,5 +701,12 @@ mod tests {
             required_autostart_change(true, false),
             Some(AutostartChange::Disable)
         );
+    }
+
+    #[test]
+    fn secret_commands_require_the_settings_label() {
+        assert!(require_settings_window_label("settings").is_ok());
+        assert!(require_settings_window_label("mascot").is_err());
+        assert!(require_settings_window_label("quick-ask").is_err());
     }
 }

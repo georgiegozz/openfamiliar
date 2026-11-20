@@ -14,6 +14,21 @@ cargo run -p familiar-cli -- pack build my-buddy
 cargo run -p familiar-cli -- pack inspect my-buddy.familiar
 ```
 
+## Import a local image
+
+Quantize a PNG or JPEG on disk into a pack with a fixed asset path
+(`assets/spritesheet.png`). The command will not overwrite an existing `--out`
+directory unless you pass `--force`.
+
+```powershell
+cargo run -p familiar-cli -- pack import-image --input .\foto.png --out .\my-buddy --colors 64 --layout tiled
+cargo run -p familiar-cli -- pack validate .\my-buddy
+```
+
+`--layout` is `tiled` (default, one 64 px portrait repeated on a 4×4 sheet),
+`sheet` (treat the file as a 256 px contact sheet), or `frame` (a single 64 px
+PNG still stored as `assets/spritesheet.png`).
+
 Record author, source, license, and AI assistance in the manifest plus a pack
 `NOTICE`. Use only repo-owned or redistributable art. The current desktop bundles
 Perrito Tech; installing arbitrary packs through the UI remains future work.

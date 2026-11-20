@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
+import { AvatarEditor } from "../features/mascot-editor/AvatarEditor";
 import { backend, isTauri, normalizeBackendError } from "../lib/backend";
 import {
+  BUNDLED_MASCOT_ID,
   DEFAULT_PREFERENCES,
   type AppPreferences,
+  type LocalMascotInfo,
+  type ProviderId,
   type ProviderStatus,
 } from "../lib/types";
 
 const TABS = [
   "General",
   "Codex",
+  "Proveedores",
   "Apariencia",
   "Comportamiento",
   "Privacidad",
@@ -23,6 +28,10 @@ export function SettingsWindow() {
   const [provider, setProvider] = useState<ProviderStatus>();
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [localMascots, setLocalMascots] = useState<LocalMascotInfo[]>([]);
+  const [importError, setImportError] = useState("");
+  const [secretDraft, setSecretDraft] = useState("");
+  const [anthropicConfigured, setAnthropicConfigured] = useState(false);
 
   const providerLabel = useMemo(() => {
     if (!provider) return "Sin comprobar";
@@ -34,6 +43,10 @@ export function SettingsWindow() {
 
   useEffect(() => {
     void backend.getPreferences().then(setPreferences);
+    void backend
+      .listLocalMascots()
+      .then(setLocalMascots)
+      .catch(() => setLocalMascots([]));
     if (!isTauri()) {
       void backend.detectCodex().then(setProvider);
       return;
@@ -188,8 +201,176 @@ export function SettingsWindow() {
           </div>
         ) : null}
 
+        {tab === "Proveedores" ? (
+          <div className="settings-section">
+            <label className="settings-field">
+              <span>Proveedor one-shot activo</span>
+              <select
+                value={preferences.activeProviderId}
+                onChange={(event) =>
+                  update("activeProviderId", event.target.value as ProviderId)
+                }
+              >
+                <option value="codex">Codex CLI</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="opencode">OpenCode CLI</option>
+                <option value="agy">Antigravity CLI</option>
+              </select>
+              <small>
+                Codex, OpenCode y Antigravity usan la sesión de su propio CLI.
+                Anthropic guarda la API key solo en el almacén de credenciales
+                del sistema, nunca en preferences.json.
+              </small>
+            </label>
+            <label className="settings-field">
+              <span>API key de Anthropic</span>
+              <input
+                type="password"
+                autoComplete="off"
+                value={secretDraft}
+                placeholder={
+                  anthropicConfigured
+                    ? "Configurada en el llavero del sistema"
+                    : "Se envía a Rust y se borra de esta ventana"
+                }
+                onChange={(event) => setSecretDraft(event.target.value)}
+              />
+              <small>
+                Estado:{" "}
+                {anthropicConfigured ? "sí, configurada" : "no configurada"}.
+                Tras guardar, el valor desaparece de la interfaz y no vuelve por
+                IPC.
+              </small>
+            </label>
+            <div className="avatar-tools">
+              <button
+                type="button"
+                className="primary-button"
+                disabled={busy || secretDraft.trim().length === 0}
+                onClick={() => {
+                  const secret = secretDraft;
+                  setSecretDraft("");
+                  setBusy(true);
+                  void backend
+                    .setProviderSecret("anthropic", secret)
+                    .then((status) => {
+                      setAnthropicConfigured(status.configured);
+                      setNotice("La key quedó en el llavero del sistema.");
+                    })
+                    .catch((error) =>
+                      setNotice(normalizeBackendError(error).message),
+                    )
+                    .finally(() => setBusy(false));
+                }}
+              >
+                Guardar en el llavero
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={busy || !anthropicConfigured}
+                onClick={() => {
+                  setBusy(true);
+                  setSecretDraft("");
+                  void backend
+                    .deleteProviderSecret("anthropic")
+                    .then((status) => {
+                      setAnthropicConfigured(status.configured);
+                      setNotice("Key eliminada del llavero.");
+                    })
+                    .catch((error) =>
+                      setNotice(normalizeBackendError(error).message),
+                    )
+                    .finally(() => setBusy(false));
+                }}
+              >
+                Eliminar key
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {tab === "Apariencia" ? (
           <div className="settings-section">
+            <label className="settings-field">
+              <span>Familiar activo</span>
+              <select
+                value={preferences.activeMascotId}
+                onChange={(event) => {
+                  const id = event.target.value;
+                  void backend
+                    .setActiveMascot(id)
+                    .then((next) => {
+                      setPreferences(next);
+                      setNotice(
+                        id === BUNDLED_MASCOT_ID
+                          ? "Perrito Tech es el familiar predeterminado."
+                          : "Familiar local activado.",
+                      );
+                    })
+                    .catch((error) =>
+                      setNotice(normalizeBackendError(error).message),
+                    );
+                }}
+              >
+                <option value={BUNDLED_MASCOT_ID}>
+                  Perrito Tech (predeterminado)
+                </option>
+                {localMascots.map((mascot) => (
+                  <option key={mascot.id} value={mascot.id}>
+                    {mascot.name}
+                  </option>
+                ))}
+              </select>
+              <small>
+                Los familiares importados viven en los datos de la aplicación y
+                se validan como paquetes no confiables. Perrito Tech sigue
+                siendo el predeterminado.
+              </small>
+            </label>
+            <label className="settings-field">
+              <span>Importar imagen</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,.png,.jpg,.jpeg"
+                disabled={busy}
+                onChange={(event) => {
+                  const input = event.currentTarget;
+                  const file = input.files?.[0];
+                  input.value = "";
+                  if (!file) return;
+                  setBusy(true);
+                  setImportError("");
+                  void (async () => {
+                    try {
+                      const buffer = new Uint8Array(await file.arrayBuffer());
+                      const name =
+                        file.name.replace(/\.[^.]+$/, "") || "mi-familiar";
+                      const info = await backend.importMascotImage({
+                        name,
+                        data: Array.from(buffer),
+                      });
+                      const listed = await backend.listLocalMascots();
+                      setLocalMascots(listed);
+                      const next = await backend.setActiveMascot(info.id);
+                      setPreferences(next);
+                      setNotice(`Importado y activado: ${info.name}.`);
+                    } catch (error) {
+                      const message = normalizeBackendError(error).message;
+                      setImportError(message);
+                      setNotice(message);
+                    } finally {
+                      setBusy(false);
+                    }
+                  })();
+                }}
+              />
+              <small>
+                PNG o JPEG local. Se convierte a una hoja 256×256 en pixel art y
+                se guarda solo en esta máquina. No se envía a la red.
+              </small>
+              {importError ? <small role="alert">{importError}</small> : null}
+            </label>
             <label className="settings-field">
               <span>Escala pixel-perfect</span>
               <select
@@ -234,6 +415,17 @@ export function SettingsWindow() {
               description="Mantiene poses estáticas aunque las animaciones estén activadas."
               checked={preferences.reduceMotion}
               onChange={(value) => update("reduceMotion", value)}
+            />
+            <AvatarEditor
+              localMascots={localMascots}
+              onSaved={(info) => {
+                void backend.listLocalMascots().then(setLocalMascots);
+                setPreferences((current) => ({
+                  ...current,
+                  activeMascotId: info.id,
+                }));
+              }}
+              onNotice={setNotice}
             />
           </div>
         ) : null}
