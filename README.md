@@ -41,7 +41,7 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
 
 - Ask one independent question, get an answer, and the interaction is discarded. OpenFamiliar does not keep a conversation history.
 - A transparent, always-on-top pixel-art companion. Idle stays visually static; animation runs only for explicit events.
-- By default, Quick Ask uses the Codex CLI you already installed and signed in. OpenFamiliar does not read Codex auth storage.
+- Quick Ask answers through the Codex CLI you already installed and signed in, unless you select Anthropic in Settings and a key is stored. OpenFamiliar does not read Codex auth storage.
 
 **Built for:** people who already use Codex CLI and want a quiet desktop way to
 ask one question; operators who want a local-first companion with no
@@ -52,7 +52,7 @@ or validate familiar packs with `mascot-sdk`.
 
 1. Download the official `v0.1.0` public beta only from [GitHub Releases](https://github.com/p3rformative/openfamiliar/releases/tag/v0.1.0). Do not download OpenFamiliar binaries from third-party sites.
 2. Verify the unsigned installer (checksum and attestation below), then install.
-3. Start OpenFamiliar, click Perrito Tech, and ask one question. A real answer requires Codex CLI installed and authenticated on the same machine.
+3. Start OpenFamiliar, click Perrito Tech, and ask one question. A real answer requires either Codex CLI installed and authenticated on the same machine, or Anthropic selected in Settings with a key stored in the OS keychain.
 
 <p id="unsigned-installer-heres-how-to-verify"></p>
 
@@ -87,20 +87,18 @@ When the answer goes through Codex CLI, Codex CLI sends your question to its
 provider under its own terms; OpenFamiliar does not control what they retain.
 Optional provider keys, if you add one in Settings, are stored in the OS
 keychain, never in `preferences.json` or logs. Newer builds than v0.1.0 can
-also answer through Anthropic if you select it and a key is stored. If you
-select Anthropic and a key is stored, OpenFamiliar sends your question
-directly to api.anthropic.com over HTTPS using your key; Anthropic handles
-it under its own terms and OpenFamiliar does not control what it retains.
-No request is made to Anthropic unless you select it and a key is stored.
-If you select Anthropic and no key is stored, Quick Ask shows an
-authentication error and does not fall back to Codex CLI.
+also answer through Anthropic if you select it and a key is stored.
 
 ```mermaid
 flowchart LR
   A[Click mascot] --> B[Ask one question]
-  B --> C[Fresh Codex CLI process (or Anthropic if selected)]
-  C --> D[Answer in Quick Ask]
-  D --> E[OpenFamiliar saves nothing]
+  B --> C{Selected provider}
+  C -->|Anthropic and a key is stored| D[HTTPS POST to api.anthropic.com]
+  C -->|Anthropic but no key| E[Request fails: not authenticated]
+  C -->|Codex, OpenCode, or Antigravity| F[Fresh read-only Codex CLI process]
+  D --> G[Answer in Quick Ask]
+  F --> G
+  G --> H[OpenFamiliar saves nothing]
 ```
 
 ## Status
@@ -126,7 +124,7 @@ Settings. Other modules in the repo are experimental.
 
 - No generic shell command or user-supplied CLI arguments.
 - When answering through Codex CLI: fresh ephemeral, read-only process per question.
-- Prompt input and output size limits, timeout, cancellation, and process-tree kill.
+- Prompt input and output size limits, and timeout. When answering through Codex CLI: cancellation and process-tree kill.
 - Restrictive Tauri CSP and minimum capability allowlist.
 - No auth/session scraping, `.env` runtime loading, loopback listener, MCP, or remote UI.
 - No prompt, answer, credential, token, or raw process output in logs.
