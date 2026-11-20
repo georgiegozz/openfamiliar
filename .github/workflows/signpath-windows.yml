@@ -3,7 +3,7 @@
 # This file is inert until a maintainer sets the repository variable
 # SIGNPATH_ENABLED=true and the SignPath variables listed in docs/signing.md,
 # plus the SIGNPATH_API_TOKEN secret. It does not run on push or pull_request.
-# Adding or changing a workflow requires Jorge's explicit authorization
+# Adding or changing a workflow requires explicit maintainer authorization
 # before merge.
 #
 # Do not put API tokens or other secrets in this file.

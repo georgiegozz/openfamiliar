@@ -1,125 +1,63 @@
 # SignPath Foundation preparation
 
-This page is a maintainer checklist for a possible SignPath Foundation
-application. It does not mean OpenFamiliar is accepted, that a certificate
-exists, or that any current binary is signed. Public v0.1.0 installers remain
-unsigned. Do not promise signed releases.
+Current OpenFamiliar installers are **not signed**. Signing with SignPath
+Foundation is under evaluation. There is no guarantee of acceptance, a
+certificate, or a signed release. Do not describe binaries as signed until
+a specific build has actually been signed.
 
 The companion workflow `.github/workflows/signpath-windows.yml` is
 **manual** (`workflow_dispatch` only) and **inert** until a maintainer
 enables it. Adding that workflow is a GitHub Actions workflow change and
-needs Jorge's explicit authorization before it is merged.
+needs explicit maintainer authorization before it is merged.
 
 Read this together with `docs/guides/windows-code-signing.md`. SignPath is
-only one of the public-signing options listed there. This work is low
-priority: a rejection or a later decision to use another path is acceptable.
-
-Conditions below were verified against the SignPath Foundation terms at
+one of several public-signing options listed there. Conditions below were
+checked against the SignPath Foundation terms at
 [signpath.org/terms](https://signpath.org/terms.html) on 19 November 2026
 (America/Mexico_City). Those terms were still marked as a **draft** Code of
-Conduct. Recheck them before applying.
+Conduct. Recheck them before any evaluation proceeds.
 
-## Current project facts
+## What to keep in mind
 
-- The repository `p3rformative/openfamiliar` is public, Apache-2.0 for code,
-  and had **1** GitHub star when this page was written (19 November 2026).
-- Official Perrito Tech artwork is licensed under **CC BY 4.0**. Blank mascot
-  templates use **CC0-1.0**. See `NOTICE` and `mascots/perrito-tech/LICENSE`.
-- Releases so far are an unsigned pre-release. The repo must not claim
-  otherwise.
+- SignPath Foundation decides whether to accept a project. They are under
+  no obligation to do so, and there is no independent appeal.
+- For downloadable executables they require a verifiable project
+  reputation, because the certificate would be issued in their name.
+- A free OSS subscription requires an OSI-approved license for all
+  components. The code is Apache-2.0 (OSI-approved). Official Perrito Tech
+  art is CC BY 4.0, and blank templates are CC0-1.0; those are not
+  OSI-approved software licenses and should be reviewed against that rule.
+- If a project is accepted, the terms require a **Code signing policy**
+  section on the home page and download pages, with required wording, team
+  roles (authors, reviewers, approvers), and a privacy statement. This
+  repository does not add that section to the README now.
 
-## Risks that may block acceptance
-
-These are taken from the Foundation terms, not from a private conversation
-with SignPath. SignPath Foundation is under no obligation to accept a
-project, and there is no independent appeal.
-
-**Verifiable reputation.** For executable programs that people may download
-and run based on the signature, SignPath requires "a certain verifiable
-reputation" because the certificate is issued to **SignPath Foundation**,
-whose name and reputation are on the line. "We cannot sign binaries based
-on source code that nobody knows." With about one star and limited public
-use, **rejection is likely**. The terms say some rules are "soft and fuzzy"
-and that the decision is theirs alone.
-
-**OSI license for every component.** A free OSS subscription requires an
-OSI-approved Open Source license, without commercial dual-licensing, for
-**all components**, and no proprietary or non-open-source component (system
-libraries in signed packages are allowed). Apache-2.0 is OSI-approved. CC
-BY 4.0 and CC0-1.0 are Creative Commons content licenses, not OSI-approved
-software licenses. The official mascot art **may clash** with that "all
-components" rule. Do not assume SignPath will treat packaged artwork as
-out of scope. Confirm this before, or during, an application.
-
-**Do not promise signing.** Until the Foundation accepts the project, a
-certificate is in use, and a specific build has actually been signed, no
-README, release note, or website text should say that OpenFamiliar is
-SignPath-signed or that signing is forthcoming as a guarantee.
-
-**Publisher is SignPath Foundation.** If a certificate is granted, it is
-issued to SignPath Foundation, which is then the publisher of the OSS
-project. They can pause or terminate the subscription and revoke the
-certificate, including retroactively, if their rules are broken. They
-accept no liability for damages from software signed with those
-certificates.
-
-## If the project is accepted: homepage "Code signing policy"
-
-The terms require a section titled **Code signing policy** on the project's
-home page and on download or release pages (as a heading or a link). **This
-repository does not add that section to the README now.** Jorge should add
-it only after acceptance, with the required content, including:
-
-- The sentence "Free code signing provided by SignPath.io, certificate by
-  SignPath Foundation".
-- Team roles and the people or GitHub teams who hold them:
-  - **Authors / committers:** trusted to change source without extra review.
-  - **Reviewers:** review changes from people who are not committers.
-  - **Approvers:** approve each signing request for a release.
-- A privacy policy link, or the exact allowed wording: "This program will
-  not transfer any information to other networked systems unless
-  specifically requested by the user or the person installing or operating
-  it". Also account for third-party components. See `PRIVACY.md`.
-
-Other conditions that would apply after acceptance include: MFA on GitHub
-and SignPath for every team member; sign only this team's own projects and
-binaries; every release needs manual signing approval; artifact metadata
-(product name and version) must be set and enforced; no malware or
-"hacking tools" as defined in the terms; documented, maintained, and
-already released software; all jobs leading up to a signing request must
-run on GitHub-hosted runners.
-
-## Maintainer checklist (Jorge)
-
-Nobody should register the project, create a SignPath account, or paste
-tokens in chat on Jorge's behalf. If he decides to apply, he should:
+## Maintainer checklist
 
 1. Reread [signpath.org/terms](https://signpath.org/terms.html) and
    [SignPath's GitHub integration docs](https://docs.signpath.io/trusted-build-systems/github).
-2. Weigh the reputation and license risks above. An application can wait.
-3. If applying, do it himself through SignPath Foundation. Install the
-   SignPath GitHub App only if they require it.
-4. After a written acceptance, create a SignPath project linked to
+2. If maintainers choose to evaluate SignPath, complete any application
+   and GitHub App setup themselves.
+3. After written acceptance, create a SignPath project linked to
    `p3rformative/openfamiliar`, a signing policy, and an artifact
    configuration that matches the unsigned MSI/NSIS outputs.
-5. Create an API token for a user with submitter permission. Store it only
+4. Create an API token for a user with submitter permission. Store it only
    as the GitHub Actions repository secret `SIGNPATH_API_TOKEN`. Never
-   commit it, put it in a workflow file, or paste it into a pull request
-   or chat.
-6. Set repository **variables** (not secrets, except the token):
+   commit it or put it in a workflow file.
+5. Set repository **variables** (not secrets, except the token):
    - `SIGNPATH_ORGANIZATION_ID`
    - `SIGNPATH_PROJECT_SLUG`
    - `SIGNPATH_SIGNING_POLICY_SLUG`
-7. Only then set `SIGNPATH_ENABLED` to `true`. Until the variables are
+6. Only then set `SIGNPATH_ENABLED` to `true`. Until the variables are
    present, `signpath-windows` prints a notice and exits without building
    or calling SignPath. If the variables are set but `SIGNPATH_API_TOKEN`
    is missing, a short preflight job fails before any Windows build.
-8. Add the **Code signing policy** section to the home page as required
-   by the terms. Do not add it early, and do not claim a signature that
+7. Add the **Code signing policy** section to the home page only after
+   acceptance, as required by the terms. Do not claim a signature that
    does not exist.
-9. Require MFA for everyone who can push or approve signing.
-10. Run `.github/workflows/signpath-windows.yml` by hand and confirm the
-    signed artifacts before any public "signed" label.
+8. Require MFA for everyone who can push or approve signing.
+9. Run `.github/workflows/signpath-windows.yml` by hand and confirm the
+   signed artifacts before any public "signed" label.
 
 ## What the workflow does
 
