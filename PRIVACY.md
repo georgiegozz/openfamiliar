@@ -14,9 +14,9 @@ The stable MVP does **not** store chat history, answers, workspace paths,
 workspace files, Codex tokens, or raw Codex stdout/stderr. Questions and
 answers exist in application memory only for the current ephemeral request.
 OpenFamiliar does not put optional provider keys in `preferences.json` or
-logs; if you add one in Settings, it is stored in the OS keychain. This
-release does not use those keys to answer questions; Quick Ask still goes
-through the installed Codex CLI.
+logs; if you add one in Settings, it is stored in the OS keychain. If you
+select Anthropic in Settings and a key is stored, Quick Ask uses that key
+to answer; otherwise Quick Ask still goes through the installed Codex CLI.
 
 ## Codex CLI and network
 

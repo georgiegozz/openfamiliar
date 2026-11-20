@@ -17,7 +17,7 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
   <a href="https://github.com/p3rformative/openfamiliar/releases"><img alt="Release" src="https://img.shields.io/github/v/release/p3rformative/openfamiliar?include_prereleases"></a>
   <a href="https://github.com/p3rformative/openfamiliar/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/p3rformative/openfamiliar/total"></a>
   <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri-2-24C8DB">
-  <img alt="Rust 1.80+" src="https://img.shields.io/badge/Rust-1.80%2B-orange">
+  <img alt="Rust 1.88+" src="https://img.shields.io/badge/Rust-1.88%2B-orange">
   <img alt="code Apache-2.0 · art CC BY 4.0" src="https://img.shields.io/badge/code-Apache--2.0%20%C2%B7%20art%20CC%20BY%204.0-blue">
 </p>
 
@@ -79,14 +79,15 @@ checksum and install only when both the repository and artifact are trusted.
 
 ## How it works
 
-You click the mascot, type one question, and OpenFamiliar starts a fresh
-read-only Codex CLI process. The answer appears in Quick Ask. The prompt and
-answer stay in memory only for that request; the process then exits.
-OpenFamiliar does not save the question or the answer. Codex CLI sends your
-question to its provider under its own terms; OpenFamiliar does not control
-what they retain. Optional provider keys, if you add one in Settings, are
-stored in the OS keychain, never in `preferences.json` or logs. One-shot
-answers on this release still go through Codex CLI.
+You click the mascot, type one question, and the answer appears in Quick Ask.
+If Codex CLI is selected, OpenFamiliar starts a fresh read-only Codex CLI
+process; the prompt and answer stay in memory only for that request, and the
+process then exits. OpenFamiliar does not save the question or the answer.
+When the answer goes through Codex CLI, Codex CLI sends your question to its
+provider under its own terms; OpenFamiliar does not control what they retain.
+Optional provider keys, if you add one in Settings, are stored in the OS
+keychain, never in `preferences.json` or logs. One-shot answers go through
+Codex CLI unless you select Anthropic and a key is stored.
 
 ```mermaid
 flowchart LR
