@@ -33,5 +33,8 @@ movement. Browser sessions and cookies are never scraped.
 There is no automatic log upload. Any diagnostic report is shared voluntarily;
 review it using `docs/guides/share-diagnostics.md` before publication.
 
+To report a security issue, follow [SECURITY.md](./SECURITY.md). For other
+questions or support, see [SUPPORT.md](./SUPPORT.md).
+
 This document describes the implemented pre-1.0 product and is not legal advice
 for every deployment scenario.

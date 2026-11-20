@@ -220,9 +220,10 @@ export function SettingsWindow() {
                 <option value="agy">Antigravity CLI</option>
               </select>
               <small>
-                Codex, OpenCode y Antigravity usan la sesión de su propio CLI.
-                Anthropic guarda la API key solo en el almacén de credenciales
-                del sistema, nunca en preferences.json.
+                En esta versión Quick Ask responde solo con Codex CLI.
+                Anthropic, OpenCode y Antigravity se pueden seleccionar, pero
+                todavía no responden. Si guardas una API key de Anthropic, queda
+                solo en el llavero del sistema, nunca en preferences.json.
               </small>
             </label>
             <label className="settings-field">
@@ -463,8 +464,11 @@ export function SettingsWindow() {
               categorías de error; nunca prompt, stdout ni stderr.
             </p>
             <p>
-              No hay acceso genérico a shell, proveedor remoto, API key,
-              workspace ni modo agente.
+              No hay acceso genérico a shell, workspace ni modo agente. Puedes
+              guardar una clave opcional de proveedor en el llavero del sistema,
+              nunca en preferences.json ni en los logs, pero esta versión no la
+              usa para responder: Quick Ask sigue saliendo por el Codex CLI
+              instalado.
             </p>
           </div>
         ) : null}
