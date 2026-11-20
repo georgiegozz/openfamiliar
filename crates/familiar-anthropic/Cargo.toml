@@ -1,0 +1,20 @@
+[package]
+name = "familiar-anthropic"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "One-shot Anthropic Messages client used by the stable desktop"
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+familiar-credentials = { path = "../familiar-credentials" }
+reqwest = { version = "=0.12.28", default-features = false, features = ["json", "rustls-tls"], optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[features]
+default = []
+http = ["dep:reqwest"]

@@ -36,6 +36,7 @@ export interface AppPreferences {
   timeoutSeconds: number;
   activeMascotId: string;
   activeProviderId: ProviderId;
+  anthropicModel: string;
 }
 
 export interface BackendError {
@@ -66,6 +67,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   timeoutSeconds: 120,
   activeMascotId: "perrito-tech",
   activeProviderId: "codex",
+  anthropicModel: "claude-sonnet-4-5",
 };
 
 export const BUNDLED_MASCOT_ID = "perrito-tech";
