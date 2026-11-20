@@ -10,6 +10,9 @@ import {
   type ProviderStatus,
 } from "../lib/types";
 
+const AFFILIATION_DISCLAIMER =
+  "OpenFamiliar is an independent open-source project and is not affiliated with, sponsored by, or endorsed by OpenAI, Google, xAI, Anthropic, Microsoft, Amazon, or their respective products.";
+
 const TABS = [
   "General",
   "Codex",
@@ -217,10 +220,14 @@ export function SettingsWindow() {
                 <option value="agy">Antigravity CLI</option>
               </select>
               <small>
-                Codex, OpenCode y Antigravity usan la sesión de su propio CLI.
-                Anthropic guarda la API key solo en el almacén de credenciales
-                del sistema, nunca en preferences.json. El webview no hace fetch
-                al proveedor.
+                Quick Ask responde con Anthropic si lo eliges y hay una clave en
+                el llavero. Si eliges Anthropic y no hay clave guardada, Quick
+                Ask muestra un error de autenticación y no recurre a Codex CLI.
+                OpenCode y Antigravity se pueden seleccionar, pero todavía no
+                responden; en ese caso la pregunta sale por Codex CLI. Anthropic
+                guarda la API key solo en el almacén de credenciales del
+                sistema, nunca en preferences.json. El webview no hace fetch al
+                proveedor.
               </small>
             </label>
             <label className="settings-field">
@@ -466,17 +473,26 @@ export function SettingsWindow() {
           <div className="settings-section prose-section">
             <h2>Contrato del MVP</h2>
             <p>
-              Cada pregunta inicia un proceso efímero de Codex CLI en modo
-              read-only. OpenFamiliar no conserva preguntas, respuestas ni
-              historial.
+              OpenFamiliar no conserva preguntas, respuestas ni historial. Si la
+              respuesta sale por Codex CLI, se inicia un proceso efímero en modo
+              read-only.
             </p>
             <p>
               Los logs locales contienen solamente eventos operativos y
               categorías de error; nunca prompt, stdout ni stderr.
             </p>
             <p>
-              No hay acceso genérico a shell, proveedor remoto, API key,
-              workspace ni modo agente.
+              No hay acceso genérico a shell, workspace ni modo agente. Puedes
+              guardar una clave opcional de proveedor en el llavero del sistema,
+              nunca en preferences.json ni en los logs. Si eliges Anthropic y
+              hay una clave guardada, Quick Ask la usa para responder. En ese
+              caso la pregunta sale por HTTPS a api.anthropic.com y queda bajo
+              los términos y la política de privacidad de Anthropic;
+              OpenFamiliar no controla qué retiene Anthropic. El detalle está en
+              PRIVACY.md del repositorio. Si eliges Anthropic y no hay clave, la
+              petición falla (no autenticado) y no sale por Codex CLI. Si eliges
+              Codex, OpenCode o Antigravity, la pregunta sale por el Codex CLI
+              instalado.
             </p>
           </div>
         ) : null}
@@ -492,6 +508,7 @@ export function SettingsWindow() {
               Codex CLI es una dependencia externa: debe estar instalado y
               autenticado por el operador.
             </p>
+            <p>{AFFILIATION_DISCLAIMER}</p>
           </div>
         ) : null}
 
