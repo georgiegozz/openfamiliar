@@ -6,7 +6,8 @@ cloud backend, analytics, or telemetry.
 ## Stored locally
 
 - Non-sensitive preferences such as mascot scale, palette, motion, language,
-  timeout, startup, and window position.
+  timeout, startup, and window position. `preferences.json` also stores the
+  Codex executable path in the `codexPath` field.
 - Category-only operational logs used for diagnostics.
 
 The stable MVP does **not** store chat history, answers, workspace paths,
