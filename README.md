@@ -7,7 +7,7 @@
 <p align="center"><strong>Ask once. Get an answer. It forgets.<br>
 A pixel-art desktop buddy for your Codex CLI.</strong></p>
 
-<p align="center">No conversation history, no keys in preferences, no surprises.</p>
+<p align="center">No history, no OpenFamiliar account, no telemetry.</p>
 
 <p align="center">Windows 11 x64 only for now. The public beta installer is unsigned;
 <a href="#unsigned-installer-heres-how-to-verify">here's how to verify</a>.</p>
@@ -25,8 +25,7 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
 > sponsored by, or endorsed by OpenAI, Google, xAI, Anthropic, Microsoft, Amazon,
 > or their respective products.
 
-<!-- TODO: replace this placeholder with a real 5–8 s hero GIF: 480 px wide, under 3 MB, captured from the actual Windows desktop app. Do not use a simulated or generated recording. -->
-<p align="center"><em>Hero clip coming soon — a real 5–8 second recording of the Windows app (480 px, under 3 MB). This is a placeholder, not a simulated demo.</em></p>
+<!-- TODO: replace this placeholder with a real 5-8 s hero GIF: 480 px wide, under 3 MB, captured from the actual Windows desktop app. Do not use a simulated or generated recording. -->
 
 <p align="center">
   <img src="./docs/assets/openfamiliar-quick-ask.png" alt="Still preview of the OpenFamiliar Quick Ask window on Windows, with Perrito Tech beside a one-shot question field.">
@@ -44,6 +43,11 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
 - A transparent, always-on-top pixel-art companion. Idle stays visually static; animation runs only for explicit events.
 - Quick Ask uses the Codex CLI you already installed and signed in. OpenFamiliar does not read Codex auth storage.
 
+**Built for:** people who already use Codex CLI and want a quiet desktop way to
+ask one question; operators who want a local-first companion with no
+OpenFamiliar account, cloud backend, or telemetry; and contributors who build
+or validate familiar packs with `mascot-sdk`.
+
 ## Download and quick start
 
 1. Download the official `v0.1.0` public beta only from [GitHub Releases](https://github.com/p3rformative/openfamiliar/releases/tag/v0.1.0). Do not download OpenFamiliar binaries from third-party sites.
@@ -59,8 +63,8 @@ The `v0.1.0` public beta is unsigned, so Windows may display a SmartScreen warni
 Download `SHA256SUMS.txt` from the [v0.1.0 Releases page](https://github.com/p3rformative/openfamiliar/releases/tag/v0.1.0),
 where it is published as a release asset next to the installers
 ([direct download](https://github.com/p3rformative/openfamiliar/releases/download/v0.1.0/SHA256SUMS.txt)).
-When the repository is public, the packaging workflow attests the NSIS `.exe`
-and the `.msi` installers; it does not attest `SHA256SUMS.txt`. Verify a
+The packaging workflow attests the NSIS `.exe` and `.msi`; it does not attest
+`SHA256SUMS.txt`. Verify a
 downloaded NSIS installer with:
 
 ```powershell
@@ -105,11 +109,9 @@ implemented and tested as described in [ROADMAP.md](./ROADMAP.md). Quick Ask
 answers through Codex CLI, with fake-CLI tests. A clean-user smoke test has
 passed on a separate Windows computer.
 
-Additional one-shot providers (Anthropic, OpenCode, Antigravity) are authorized
-as follow-up work and are not how this release answers questions. Monorepo
-scaffolds for other providers, workspaces, agents, MCP, Creator Studio, VS Code,
-and advanced packs are not initialized or visible in the stable Windows MVP and
-must not be described as finished product capabilities.
+OpenCode and Antigravity are planned. The v0.1.0 installer answers only through
+Codex CLI; newer builds can also answer through Anthropic if you select it in
+Settings. Other modules in the repo are experimental.
 
 </details>
 
@@ -133,11 +135,6 @@ Setup, validation, installer builds, and the
 Pack types live in [`packages/mascot-sdk`](./packages/mascot-sdk).
 Perrito Tech artwork is credited as “Perrito Tech — OpenFamiliar contributors”
 (CC BY 4.0); see the [asset notice](./mascots/perrito-tech/NOTICE).
-
-**Built for:** people who already use Codex CLI and want a quiet desktop way to
-ask one question; operators who want a local-first companion with no
-OpenFamiliar account, cloud backend, or telemetry; and contributors who build
-or validate familiar packs with `mascot-sdk`.
 
 Questions and patches go through [Issues](https://github.com/p3rformative/openfamiliar/issues)
 and pull requests. Look for issues labeled
