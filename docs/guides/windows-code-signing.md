@@ -25,7 +25,10 @@ installers.
 3. **SignPath Foundation**: potentially free for accepted open-source projects.
    It requires an application plus repository, build-provenance, security, and
    maintenance conditions; it should be evaluated after the public project and
-   repeatable CI build exist.
+   repeatable CI build exist. A manual, inert GitHub Actions workflow and a
+   maintainer checklist are in [docs/signing.md](../signing.md). That
+   preparation does not mean the project is accepted or that binaries are
+   signed.
 4. **Microsoft Artifact Signing Public Trust**: cloud signing is inexpensive,
    but as of 2026-07-14 individual onboarding is listed only for the United
    States and Canada. Recheck availability before selecting it for an individual
