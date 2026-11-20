@@ -22,7 +22,8 @@ A pixel-art desktop buddy for your Codex CLI.</strong></p>
 </p>
 
 > OpenFamiliar is an independent open-source project and is not affiliated with,
-> sponsored by, or endorsed by OpenAI or any other tool vendor.
+> sponsored by, or endorsed by OpenAI, Google, xAI, Anthropic, Microsoft, Amazon,
+> or their respective products.
 
 <!-- TODO: replace this placeholder with a real 5–8 s hero GIF: 480 px wide, under 3 MB, captured from the actual Windows desktop app. Do not use a simulated or generated recording. -->
 <p align="center"><em>Hero clip coming soon — a real 5–8 second recording of the Windows app (480 px, under 3 MB). This is a placeholder, not a simulated demo.</em></p>
