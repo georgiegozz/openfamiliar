@@ -35,6 +35,11 @@ Android `$VIDEO` / `video_dir()`, and `tauri-build` 2.7 declares rust-version
 | RUSTSEC-2026-0538 (not in #31; found by `cargo audit` 0.23.0 on 19 Nov 2026) | `quinn-udp`     | 0.5.15                   | 0.5.16                                                    |
 | RUSTSEC-2026-0486 (`unsound`; not in the #31 vulnerability list)             | `rustix`        | 1.1.4                    | 1.1.6                                                     |
 
+The same `zip` 9.7.3 and `quinn-proto` 0.11.19 bumps also clear four
+advisories that were not in #31 but showed up in `cargo audit` 0.23.0 on
+19 Nov 2026 against current `main`: RUSTSEC-2026-0545 and 0548 (`zip`
+2.4.2) and RUSTSEC-2026-0523 and 0524 (`quinn-proto` 0.11.16).
+
 Workspace `rust-version` moves from 1.80 to 1.88 because `zip` 9.0.1+
 declares 1.88. 9.7.3 is the newest 9.x that stays on 1.88; 9.8.0 declares
 1.89 and was not taken. Default features of `zip` were turned off because
