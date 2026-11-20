@@ -33,6 +33,8 @@ export const backend = {
   detectCodex: () => invokeBackend<ProviderStatus>("detect_codex"),
   askCodex: (request: OneShotRequest) =>
     invokeBackend<OneShotResult>("ask_codex", { request }),
+  askOneShot: (request: OneShotRequest) =>
+    invokeBackend<OneShotResult>("ask_one_shot", { request }),
   cancelCodex: (requestId: string) =>
     invokeBackend<void>("cancel_codex", { requestId }),
   getPreferences: () => invokeBackend<AppPreferences>("get_preferences"),
@@ -143,6 +145,7 @@ async function mockInvoke<T>(
           "Browser preview: Codex CLI detection requires the Tauri build.",
       } as T;
     case "ask_codex":
+    case "ask_one_shot":
       await new Promise((resolve) => setTimeout(resolve, 250));
       return {
         requestId: String(

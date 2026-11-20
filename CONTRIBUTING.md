@@ -16,6 +16,8 @@ Thanks for your interest in contributing.
 
 ## Development setup
 
+The workspace `rust-version` is 1.88.
+
 Local and CI commands, including how to regenerate the license inventory on
 Windows, are in [docs/development/verification.md](./docs/development/verification.md).
 The pull request checklist lives in `.github/PULL_REQUEST_TEMPLATE.md`.
