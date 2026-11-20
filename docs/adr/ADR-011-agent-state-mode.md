@@ -3,6 +3,9 @@
 - Status: Proposed
 - Date: 2026-11-19
 
+What this decides: nothing yet. This ADR records the conflict between a
+stateful mode and v0.1's one-shot, no-listener stance; v0.1 does not change.
+
 ## Context
 
 The stable Windows v0.1 desktop is a one-shot familiar: one independent
@@ -52,8 +55,10 @@ it is accepted (or explicitly rejected) in a later review:
 ## Consequences
 
 - Shipping v0.1 does not wait on this decision.
-- README, the threat model, and the security playbook keep the current
-  rule: idle operation starts no listener, MCP, or remote UI.
+- README and the security playbook keep the current rule: idle operation
+  starts no listener, MCP, or remote UI. This ADR does not update
+  `docs/security/threat-model.md`, which still describes an earlier MVP
+  surface (chat history, workspace, and local MCP as a control).
 - Accepting this mode later would have to amend or supersede the stable
   reading of ADR-007, ADR-009, and the roadmap gates for agent mode and
   MCP. It would not be a documentation-only change.
